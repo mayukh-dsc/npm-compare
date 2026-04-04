@@ -1,0 +1,30 @@
+{
+  "name": "another-project",
+  "version": "2.0.0",
+  "lockfileVersion": 3,
+  "requires": true,
+  "packages": {
+    "": {
+      "name": "another-project",
+      "version": "2.0.0",
+      "dependencies": {
+        "axios": "^1.6.0"
+      }
+    },
+    "node_modules/axios": {
+      "version": "1.6.0",
+      "resolved": "https://registry.npmjs.org/axios/-/axios-1.6.0.tgz",
+      "integrity": "sha512-EZ1DYihju7qSQmSBB9uW3dN2FDdNMnx3g9c7lJ9jl/fnT/IaJmYhq11GKXID9M3I/8hPNkORi4qVtMblbmhg=="
+    },
+    "node_modules/follow-redirects": {
+      "version": "1.15.4",
+      "resolved": "https://registry.npmjs.org/follow-redirects/-/follow-redirects-1.15.4.tgz",
+      "integrity": "sha512-Cr4D/5wlrb6xe3+brMVLiM9X1Vv09cFgbPgWTAsF2MEKSGiGVS9lLFqKFKzLHGWNyWN9IfeCj9vFSy2Jj/XA=="
+    },
+    "node_modules/private-pkg": {
+      "version": "1.0.0",
+      "resolved": "https://my-artifactory.company.com/artifactory/api/npm/npm-virtual/private-pkg/-/private-pkg-1.0.0.tgz",
+      "integrity": "sha512-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=="
+    }
+  }
+}

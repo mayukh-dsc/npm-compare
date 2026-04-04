@@ -1,0 +1,8 @@
+node_modules/
+dist/
+coverage/
+*.log
+.DS_Store
+
+# Generated HTML reports (consumer projects; harmless if present during local dev)
+.npm-compare/

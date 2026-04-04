@@ -1,0 +1,61 @@
+{
+  "name": "npm-compare",
+  "version": "0.1.0",
+  "description": "A minimalistic security tool that audits installed npm packages and compares them against previous installs or the npm registry to detect supply-chain attacks.",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "bin": {
+    "npm-compare": "./dist/cli.js"
+  },
+  "files": [
+    "dist/",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "lint": "eslint src tests",
+    "typecheck": "tsc --noEmit",
+    "prepublishOnly": "npm run typecheck && npm run test && npm run build"
+  },
+  "keywords": [
+    "security",
+    "supply-chain",
+    "npm",
+    "audit",
+    "lockfile",
+    "packages",
+    "integrity",
+    "compare"
+  ],
+  "license": "MIT",
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/mayukh-dsc/npm-compare.git"
+  },
+  "bugs": {
+    "url": "https://github.com/mayukh-dsc/npm-compare/issues"
+  },
+  "homepage": "https://github.com/mayukh-dsc/npm-compare#readme",
+  "dependencies": {
+    "commander": "^12.1.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.14.0",
+    "@typescript-eslint/eslint-plugin": "^7.13.0",
+    "@typescript-eslint/parser": "^7.13.0",
+    "@vitest/coverage-v8": "^1.6.0",
+    "eslint": "^8.57.0",
+    "prettier": "^3.3.0",
+    "typescript": "^5.4.0",
+    "vitest": "^1.6.0"
+  }
+}

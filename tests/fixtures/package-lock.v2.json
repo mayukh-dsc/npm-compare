@@ -1,0 +1,42 @@
+{
+  "name": "my-project",
+  "version": "1.2.3",
+  "lockfileVersion": 2,
+  "requires": true,
+  "packages": {
+    "": {
+      "name": "my-project",
+      "version": "1.2.3",
+      "dependencies": {
+        "lodash": "^4.17.21"
+      },
+      "devDependencies": {
+        "typescript": "^5.0.0"
+      }
+    },
+    "node_modules/lodash": {
+      "version": "4.17.21",
+      "resolved": "https://registry.npmjs.org/lodash/-/lodash-4.17.21.tgz",
+      "integrity": "sha512-v2kDEe57lecTulaDIuNTPy3Ry4gLGJ6Z1O3vE1krgXZNrsQ+LFTGHVxVjcXPs17LhbZgyGBI2VdHD+d0Uz/A=="
+    },
+    "node_modules/typescript": {
+      "version": "5.4.5",
+      "resolved": "https://registry.npmjs.org/typescript/-/typescript-5.4.5.tgz",
+      "integrity": "sha512-vcI4UpRgg81oIRUFwR0WSIHKt11nJ7SAVlYNyylat+MBzv8FUr9Ij03ZHKAg7JwwfZ4rU5GFiH1YMi2aYQ7g==",
+      "dev": true
+    },
+    "node_modules/@types/node": {
+      "version": "20.14.0",
+      "resolved": "https://registry.npmjs.org/@types/node/-/node-20.14.0.tgz",
+      "integrity": "sha512-Dlu8pEJFIRTcRQEP6MHmNO1vq1P/3dyNi0TDGU2o1RP4PqRVFd/d5OYMQV7h/YI1T6RL1v9VSMEFTWo6VSOQ==",
+      "dev": true
+    }
+  },
+  "dependencies": {
+    "lodash": {
+      "version": "4.17.21",
+      "resolved": "https://registry.npmjs.org/lodash/-/lodash-4.17.21.tgz",
+      "integrity": "sha512-v2kDEe57lecTulaDIuNTPy3Ry4gLGJ6Z1O3vE1krgXZNrsQ+LFTGHVxVjcXPs17LhbZgyGBI2VdHD+d0Uz/A=="
+    }
+  }
+}
