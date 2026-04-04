@@ -40,6 +40,7 @@ describe('generateRegistryAuditHtml', () => {
           isLatest: true,
           notFoundOnRegistry: false,
           hasInstallScript: false,
+          registryIntegrityMissing: false,
         },
       ],
     });
@@ -65,6 +66,7 @@ describe('generateRegistryAuditHtml', () => {
           isLatest: true,
           notFoundOnRegistry: false,
           hasInstallScript: false,
+          registryIntegrityMissing: false,
         },
       ],
     });
@@ -93,6 +95,7 @@ describe('generateRegistryAuditHtml', () => {
           isLatest: true,
           notFoundOnRegistry: false,
           hasInstallScript: false,
+          registryIntegrityMissing: false,
         },
       ],
     });
@@ -105,5 +108,30 @@ describe('generateRegistryAuditHtml', () => {
     const html = generateRegistryAuditHtml(makeAudit(), 'my-project');
     expect(html).not.toContain('cdn.');
     expect(html).not.toContain('unpkg.com');
+  });
+
+  it('shows warning badge when registry integrity is missing', () => {
+    const audit = makeAudit({
+      warningCount: 1,
+      entries: [
+        {
+          name: 'legacy',
+          version: '1.0.0',
+          lockfileIntegrity: 'sha512-lock==',
+          registryIntegrity: null,
+          lockfileResolved: 'https://registry.npmjs.org/legacy/-/legacy-1.0.0.tgz',
+          isStandardRegistry: true,
+          integrityMatch: true,
+          latestVersion: '1.0.0',
+          isLatest: true,
+          notFoundOnRegistry: false,
+          hasInstallScript: false,
+          registryIntegrityMissing: true,
+        },
+      ],
+    });
+    const html = generateRegistryAuditHtml(audit, 'my-project');
+    expect(html).toContain('No registry integrity');
+    expect(html).not.toContain('passed integrity checks');
   });
 });

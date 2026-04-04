@@ -3,7 +3,7 @@ import path from 'node:path';
 import fs from 'node:fs';
 import { Command } from 'commander';
 import { buildSnapshot } from './scanner.js';
-import { readSnapshot, writeSnapshot } from './snapshot.js';
+import { writeSnapshot } from './snapshot.js';
 import { diffPackages, hasCriticalChanges } from './diff.js';
 import { loadConfig, mergeCliFlags } from './config.js';
 import { isGitRepository, getGitSnapshot } from './strategies/git.js';
@@ -12,6 +12,8 @@ import { generateInstalledHtml } from './reporter/installed.js';
 import { generateGitDiffHtml } from './reporter/git-diff.js';
 import { generateRegistryAuditHtml } from './reporter/registry-audit.js';
 import { logger } from './logger.js';
+import { PACKAGE_VERSION } from './package-version.js';
+import { parsePositiveInt } from './cli-helpers.js';
 import type { CompareStrategyName, NpmCompareConfig } from './types.js';
 
 const program = new Command();
@@ -19,7 +21,7 @@ const program = new Command();
 program
   .name('npm-compare')
   .description('Audit installed npm packages and detect supply-chain attacks')
-  .version('0.1.0');
+  .version(PACKAGE_VERSION);
 
 program
   .command('generate')
@@ -57,8 +59,18 @@ program
         .filter((s): s is CompareStrategyName => s === 'git' || s === 'registry');
     }
     if (opts.outputDir !== undefined) cliOverrides.outputDir = opts.outputDir;
-    cliOverrides.concurrency = parseInt(opts.concurrency, 10);
-    cliOverrides.timeout = parseInt(opts.timeout, 10);
+    cliOverrides.concurrency = parsePositiveInt(
+      opts.concurrency,
+      fileConfig.concurrency,
+      1,
+      100,
+    );
+    cliOverrides.timeout = parsePositiveInt(
+      opts.timeout,
+      fileConfig.timeout,
+      100,
+      600_000,
+    );
 
     const config = mergeCliFlags(fileConfig, cliOverrides);
     const outputDir = path.resolve(projectRoot, config.outputDir);
@@ -186,7 +198,9 @@ program
       }
 
       if (audit.warningCount > 0) {
-        logger.warn(`${audit.warningCount} package(s) have warnings (non-standard registry, install scripts, or not found)`);
+        logger.warn(
+          `${audit.warningCount} package(s) have warnings (non-standard registry, install scripts, not found, or missing registry integrity)`,
+        );
       }
 
       logger.success(

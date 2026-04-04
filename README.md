@@ -83,6 +83,8 @@ By default, HTML reports are written under `**.npm-compare/**` in your project r
 
 > **Important for the git strategy:** commit `.npm-compare-snapshot.json` to your repository. It is updated on every `npm install` and git-tracked, so you always have a diff target.
 
+The `snapshotFile` path must be **repository-relative** and safe (no `..` segments or absolute paths). This is enforced when reading the snapshot from git.
+
 ---
 
 ## Configuration
@@ -134,12 +136,13 @@ Cross-checks every package in your lock file against live data from the npm regi
 | Package not found on public registry          | ⚠ Warning       |
 | Non-standard resolved URL                     | ⚠ Warning       |
 | Package has install scripts (pre/postinstall) | ⚠ Warning       |
+| Registry has no `dist.integrity` (cannot verify lock file hash) | ⚠ Warning |
 | Newer version available                       | ℹ Info          |
 
 
 ---
 
-## Security--compare=git
+## Security
 
 This tool is published with **npm provenance** (`npm publish --provenance`), cryptographically linking every release to its GitHub Actions build. You can verify any published version at `https://www.npmjs.com/package/npm-compare`.
 

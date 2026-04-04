@@ -47,6 +47,18 @@ function flattenV1Dependencies(
   return entries;
 }
 
+/** Collapse duplicate rows (same name/version/integrity/resolved from multiple lockfile paths). */
+export function dedupeLockfilePackages(packages: PackageEntry[]): PackageEntry[] {
+  const map = new Map<string, PackageEntry>();
+  for (const p of packages) {
+    const key = `${p.name}\0${p.version}\0${p.integrity}\0${p.resolved}`;
+    if (!map.has(key)) {
+      map.set(key, p);
+    }
+  }
+  return [...map.values()];
+}
+
 export interface ParsedLockfile {
   packages: PackageEntry[];
   lockfileVersion: number;
@@ -94,6 +106,7 @@ export function parseLockfile(lockfilePath: string): ParsedLockfile {
     packages = [];
   }
 
+  packages = dedupeLockfilePackages(packages);
   packages.sort((a, b) => a.name.localeCompare(b.name));
 
   return { packages, lockfileVersion, projectName, projectVersion };

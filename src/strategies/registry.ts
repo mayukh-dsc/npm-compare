@@ -86,14 +86,18 @@ async function auditSingle(
         isLatest: latestVersion ? pkg.version === latestVersion : null,
         notFoundOnRegistry: true,
         hasInstallScript: false,
+        registryIntegrityMissing: false,
         error: 'Version not found on registry',
       };
     }
 
     const registryIntegrity = versionData.dist.integrity ?? null;
-    const integrityMatch = registryIntegrity !== null
-      ? pkg.integrity === registryIntegrity
-      : true;
+    const lockfileHasIntegrity = !!pkg.integrity?.trim();
+    const registryIntegrityMissing =
+      registryIntegrity === null && lockfileHasIntegrity;
+
+    const integrityMatch =
+      registryIntegrity !== null ? pkg.integrity === registryIntegrity : true;
 
     const hasInstallScript = !!(
       versionData.scripts?.['install'] ||
@@ -113,6 +117,7 @@ async function auditSingle(
       isLatest: latestVersion ? pkg.version === latestVersion : null,
       notFoundOnRegistry: false,
       hasInstallScript,
+      registryIntegrityMissing,
     };
   } catch (err) {
     const msg = err instanceof Error ? err.message : 'UNKNOWN';
@@ -130,6 +135,7 @@ async function auditSingle(
       isLatest: null,
       notFoundOnRegistry: isNotFound,
       hasInstallScript: false,
+      registryIntegrityMissing: false,
       error: msg,
     };
   }
@@ -178,7 +184,8 @@ export async function auditRegistry(
     (e) =>
       !e.isStandardRegistry ||
       e.notFoundOnRegistry ||
-      e.hasInstallScript,
+      e.hasInstallScript ||
+      !!e.registryIntegrityMissing,
   ).length;
 
   return {

@@ -85,6 +85,7 @@ describe('auditRegistry', () => {
     expect(result.entries).toHaveLength(1);
     expect(result.entries[0]?.integrityMatch).toBe(true);
     expect(result.entries[0]?.isLatest).toBe(true);
+    expect(result.entries[0]?.registryIntegrityMissing).toBe(false);
     expect(result.criticalCount).toBe(0);
     expect(result.warningCount).toBe(0);
   });
@@ -178,6 +179,31 @@ describe('auditRegistry', () => {
     );
 
     expect(result.entries[0]?.isStandardRegistry).toBe(false);
+    expect(result.warningCount).toBeGreaterThan(0);
+  });
+
+  it('flags missing registry integrity as a warning when lock file has integrity', async () => {
+    const registryResponse = {
+      'dist-tags': { latest: '1.0.0' },
+      versions: {
+        '1.0.0': {
+          version: '1.0.0',
+          dist: { shasum: 'abc', tarball: '...' },
+        },
+      },
+    };
+
+    mockHttpsGet(200, registryResponse);
+
+    const result = await auditRegistry(
+      [pkg({ name: 'legacy-pkg', integrity: 'sha512-LOCKFILE==' })],
+      'https://registry.npmjs.org',
+      1,
+      5000,
+    );
+
+    expect(result.entries[0]?.registryIntegrityMissing).toBe(true);
+    expect(result.entries[0]?.integrityMatch).toBe(true);
     expect(result.warningCount).toBeGreaterThan(0);
   });
 
