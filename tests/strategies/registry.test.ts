@@ -114,6 +114,71 @@ describe('auditRegistry', () => {
     expect(result.criticalCount).toBe(1);
   });
 
+  it('handles invalid JSON from registry', async () => {
+    vi.mocked(https.get).mockImplementationOnce((_url, _opts, callback) => {
+      const cb = callback as GetCallback;
+      cb({
+        statusCode: 200,
+        on: (event: string, handler: (data?: Buffer | string) => void) => {
+          if (event === 'data') handler(Buffer.from('{'));
+          if (event === 'end') handler();
+        },
+      });
+      const req = {
+        on: () => req,
+        destroy: vi.fn(),
+      };
+      return req as unknown as ReturnType<typeof https.get>;
+    });
+
+    const result = await auditRegistry(
+      [pkg({ name: 'bad-json' })],
+      'https://registry.npmjs.org',
+      1,
+      5000,
+    );
+
+    expect(result.entries[0]?.error).toBe('INVALID_JSON');
+  });
+
+  it('handles request timeout', async () => {
+    vi.mocked(https.get).mockImplementationOnce((_url, _opts, _callback) => {
+      const req = {
+        on: (event: string, fn: () => void) => {
+          if (event === 'timeout') {
+            queueMicrotask(fn);
+          }
+          return req;
+        },
+        destroy: vi.fn(),
+      };
+      return req as unknown as ReturnType<typeof https.get>;
+    });
+
+    const result = await auditRegistry(
+      [pkg({ name: 'timeout-pkg' })],
+      'https://registry.npmjs.org',
+      1,
+      5000,
+    );
+
+    expect(result.entries[0]?.error).toBe('TIMEOUT');
+  });
+
+  it('handles HTTP error responses from registry', async () => {
+    mockHttpsGet(500, null);
+
+    const result = await auditRegistry(
+      [pkg({ name: 'broken-registry' })],
+      'https://registry.npmjs.org',
+      1,
+      5000,
+    );
+
+    expect(result.entries[0]?.error).toBe('HTTP_500');
+    expect(result.entries[0]?.integrityMatch).toBe(false);
+  });
+
   it('handles 404 not found gracefully', async () => {
     mockHttpsGet(404, null);
 
@@ -151,6 +216,56 @@ describe('auditRegistry', () => {
 
     expect(result.entries[0]?.hasInstallScript).toBe(true);
     expect(result.warningCount).toBe(1);
+  });
+
+  it('treats missing version in registry metadata as not found', async () => {
+    const registryResponse = {
+      'dist-tags': { latest: '2.0.0' },
+      versions: {
+        '2.0.0': {
+          version: '2.0.0',
+          dist: { integrity: 'sha512-only2==', shasum: 'a', tarball: 't' },
+        },
+      },
+    };
+
+    mockHttpsGet(200, registryResponse);
+
+    const result = await auditRegistry(
+      [pkg({ name: 'only-newer', version: '1.0.0' })],
+      'https://registry.npmjs.org',
+      1,
+      5000,
+    );
+
+    expect(result.entries[0]?.notFoundOnRegistry).toBe(true);
+    expect(result.entries[0]?.error).toBe('Version not found on registry');
+  });
+
+  it('encodes scoped package names in registry URL', async () => {
+    const registryResponse = {
+      'dist-tags': { latest: '1.0.0' },
+      versions: {
+        '1.0.0': {
+          version: '1.0.0',
+          dist: { integrity: 'sha512-SAFE==', shasum: 'a', tarball: 't' },
+        },
+      },
+    };
+    mockHttpsGet(200, registryResponse);
+
+    await auditRegistry(
+      [pkg({ name: '@scope/mypkg' })],
+      'https://registry.npmjs.org',
+      1,
+      5000,
+    );
+
+    expect(https.get).toHaveBeenCalledWith(
+      'https://registry.npmjs.org/@scope%2Fmypkg',
+      expect.any(Object),
+      expect.any(Function),
+    );
   });
 
   it('marks non-standard registry URLs as warnings', async () => {

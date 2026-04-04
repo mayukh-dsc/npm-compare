@@ -31,6 +31,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Non-standard registry URL detection
 - Install script detection (packages with pre/post install scripts)
 - Full TypeScript with strict mode
-- Unit tests for all modules (vitest), plus tests for git path validation, CLI helpers, and CLI entry (`setup`, `generate`, `--version`)
+- Unit tests for all modules (vitest), plus tests for git path validation, CLI helpers, CLI entry (`setup`, `generate`, `--version`), logger, `package-version`, public API exports, shared reporter helpers, and expanded registry / git-diff / scanner edge cases
+- Vitest coverage excludes `src/cli.ts` because the entry file is exercised via `dist/cli.js` in subprocess tests
 - GitHub Actions CI workflow (type check, lint, test, CodeQL)
 - GitHub Actions release workflow with npm provenance publishing

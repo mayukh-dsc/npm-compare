@@ -70,6 +70,65 @@ describe('generateGitDiffHtml', () => {
     expect(html).toContain('badge-added');
   });
 
+  it('renders version-only change (non-critical)', () => {
+    const diff: PackageDiff = {
+      ...makeEmptyDiff(),
+      changed: [
+        {
+          name: 'semver',
+          from: {
+            name: 'semver',
+            version: '7.5.0',
+            integrity: 'sha512-a==',
+            resolved: 'https://registry.npmjs.org/semver/-/semver-7.5.0.tgz',
+          },
+          to: {
+            name: 'semver',
+            version: '7.6.0',
+            integrity: 'sha512-a==',
+            resolved: 'https://registry.npmjs.org/semver/-/semver-7.6.0.tgz',
+          },
+          versionChanged: true,
+          integrityChanged: false,
+          resolvedChanged: true,
+        },
+      ],
+    };
+    const html = generateGitDiffHtml(diff, 'my-project');
+    expect(html).toContain('7.5.0');
+    expect(html).toContain('7.6.0');
+    expect(html).toContain('Version changed');
+  });
+
+  it('renders resolved-URL-only change', () => {
+    const diff: PackageDiff = {
+      ...makeEmptyDiff(),
+      changed: [
+        {
+          name: 'pkg',
+          from: {
+            name: 'pkg',
+            version: '1.0.0',
+            integrity: 'sha512-same==',
+            resolved: 'https://registry.npmjs.org/a.tgz',
+          },
+          to: {
+            name: 'pkg',
+            version: '1.0.0',
+            integrity: 'sha512-same==',
+            resolved: 'https://registry.npmjs.org/b.tgz',
+          },
+          versionChanged: false,
+          integrityChanged: false,
+          resolvedChanged: true,
+        },
+      ],
+    };
+    const html = generateGitDiffHtml(diff, 'my-project');
+    expect(html).toContain('URL changed');
+    expect(html).toContain('registry.npmjs.org/b.tgz');
+  });
+
   it('shows removed packages', () => {
     const diff: PackageDiff = {
       ...makeEmptyDiff(),

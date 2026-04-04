@@ -1,4 +1,6 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import fs from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
@@ -11,11 +13,39 @@ import type { PackageEntry } from '../src/types.js';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const fixturesDir = path.join(__dirname, 'fixtures');
 
+let tmpDir: string;
+
+beforeEach(() => {
+  tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'npm-compare-scan-'));
+});
+
+afterEach(() => {
+  fs.rmSync(tmpDir, { recursive: true, force: true });
+});
+
 describe('parseLockfile', () => {
   it('throws when lock file does not exist', () => {
     expect(() => parseLockfile('/nonexistent/path/package-lock.json')).toThrow(
       'Lock file not found',
     );
+  });
+
+  it('throws when lock file is not valid JSON', () => {
+    const bad = path.join(tmpDir, 'package-lock.json');
+    fs.writeFileSync(bad, '{ not json', 'utf8');
+    expect(() => parseLockfile(bad)).toThrow('Failed to parse lock file as JSON');
+  });
+
+  it('returns empty packages when lockfile v3 has no packages or dependencies', () => {
+    const empty = path.join(tmpDir, 'empty-lock.json');
+    fs.writeFileSync(
+      empty,
+      JSON.stringify({ lockfileVersion: 3, name: 'solo' }),
+      'utf8',
+    );
+    const result = parseLockfile(empty);
+    expect(result.packages).toEqual([]);
+    expect(result.lockfileVersion).toBe(3);
   });
 
   describe('lockfile v2', () => {
