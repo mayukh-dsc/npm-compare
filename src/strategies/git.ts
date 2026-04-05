@@ -1,7 +1,11 @@
 import { execFileSync } from 'node:child_process';
-import path from 'node:path';
 import { isSafeGitShowPath } from '../git-path.js';
 import type { Snapshot } from '../types.js';
+
+/** Git `HEAD:<path>` always uses `/`; normalize `\` so Windows-style paths in config work on POSIX. */
+function toGitPath(snapshotFile: string): string {
+  return snapshotFile.replace(/\\/g, '/');
+}
 
 export function isGitRepository(projectRoot: string): boolean {
   try {
@@ -26,7 +30,7 @@ export function getGitSnapshot(
   if (!isSafeGitShowPath(snapshotFile)) {
     return null;
   }
-  const gitPath = snapshotFile.split(path.sep).join('/');
+  const gitPath = toGitPath(snapshotFile);
   try {
     const output = execFileSync('git', ['show', `HEAD:${gitPath}`], {
       cwd: projectRoot,

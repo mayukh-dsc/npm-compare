@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - Default `outputDir` is `.npm-compare` so HTML reports are grouped in one directory instead of the project root.
 - Git snapshot reads use `execFile` (no shell) and validate `snapshotFile` to prevent command injection.
+- `snapshotFile` is normalized to forward slashes for `git show HEAD:<path>` so Windows-style backslashes in config work on POSIX.
 - Lock file parsing deduplicates identical package rows that appear under multiple `node_modules` paths.
 - CLI `--concurrency` / `--timeout` reject non-numeric values and clamp to safe ranges (falls back to config defaults).
 - `--version` reports the version from root `package.json`.

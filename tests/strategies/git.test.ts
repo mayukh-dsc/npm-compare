@@ -51,6 +51,19 @@ describe('getGitSnapshot', () => {
     );
   });
 
+  it('normalizes backslashes to forward slashes for git show (POSIX + Windows-style config)', () => {
+    const snapshot = makeSnapshot();
+    mockExecFileSync.mockReturnValueOnce(JSON.stringify(snapshot));
+
+    getGitSnapshot('reports\\.npm\\snapshot.json', '/some/path');
+
+    expect(mockExecFileSync).toHaveBeenCalledWith(
+      'git',
+      ['show', 'HEAD:reports/.npm/snapshot.json'],
+      expect.objectContaining({ cwd: '/some/path' }),
+    );
+  });
+
   it('returns null when git show throws (file not in HEAD)', () => {
     mockExecFileSync.mockImplementationOnce(() => {
       throw new Error('fatal: Path not found in HEAD');
