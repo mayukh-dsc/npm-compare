@@ -17,11 +17,6 @@ function packageRow(pkg: PackageEntry, rowClass: string, badge: string): string 
 function changedRow(c: ChangedPackage): string {
   const isCritical = c.integrityChanged && !c.versionChanged;
   const rowClass = isCritical ? 'row-critical' : 'row-changed';
-  const label = isCritical
-    ? '🚨 Integrity changed'
-    : c.versionChanged
-      ? `${escapeHtml(c.from.version)} → ${escapeHtml(c.to.version)}`
-      : 'Resolved URL changed';
 
   return `<tr class="${rowClass}">
     <td>

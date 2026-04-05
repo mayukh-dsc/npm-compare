@@ -50,6 +50,8 @@ export interface RegistryAuditEntry {
   isLatest: boolean | null;
   notFoundOnRegistry: boolean;
   hasInstallScript: boolean;
+  /** Registry has no `dist.integrity` for this version; lock file integrity cannot be cross-checked */
+  registryIntegrityMissing?: boolean;
   error?: string;
 }
 

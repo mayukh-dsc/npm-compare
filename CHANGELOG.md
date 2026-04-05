@@ -9,6 +9,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 - Default `outputDir` is `.npm-compare` so HTML reports are grouped in one directory instead of the project root.
+- Git snapshot reads use `execFile` (no shell) and validate `snapshotFile` to prevent command injection.
+- `snapshotFile` is normalized to forward slashes for `git show HEAD:<path>` so Windows-style backslashes in config work on POSIX.
+- Lock file parsing deduplicates identical package rows that appear under multiple `node_modules` paths.
+- CLI `--concurrency` / `--timeout` reject non-numeric values and clamp to safe ranges (falls back to config defaults).
+- `--version` reports the version from root `package.json`.
+- Registry audit warns when the published package has no `dist.integrity` but the lock file does (integrity cannot be verified).
+- Registry `warningCount` matches the HTML warnings section (critical rows are not double-counted as warnings).
 
 ### Added
 - Initial implementation of `npm-compare generate` CLI command
@@ -26,6 +33,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Non-standard registry URL detection
 - Install script detection (packages with pre/post install scripts)
 - Full TypeScript with strict mode
-- Unit tests for all modules (vitest)
+- Unit tests for all modules (vitest), plus tests for git path validation, CLI helpers, CLI entry (`setup`, `generate`, `--version`), logger, `package-version`, public API exports, shared reporter helpers, and expanded registry / git-diff / scanner edge cases
+- Vitest coverage excludes `src/cli.ts` because the entry file is exercised via `dist/cli.js` in subprocess tests
 - GitHub Actions CI workflow (type check, lint, test, CodeQL)
 - GitHub Actions release workflow with npm provenance publishing

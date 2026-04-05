@@ -1,4 +1,8 @@
-export { parseLockfile, buildSnapshot } from './scanner.js';
+export {
+  parseLockfile,
+  buildSnapshot,
+  dedupeLockfilePackages,
+} from './scanner.js';
 export type { ParsedLockfile } from './scanner.js';
 
 export { readSnapshot, writeSnapshot } from './snapshot.js';

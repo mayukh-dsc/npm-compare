@@ -1,4 +1,8 @@
 import type { RegistryAudit, RegistryAuditEntry } from '../types.js';
+import {
+  isCriticalRegistryEntry,
+  isRegistryWarningEntry,
+} from '../strategies/registry.js';
 import { escapeHtml, truncate, formatDate, commonStyles, sortScript } from './shared.js';
 
 function statusBadge(entry: RegistryAuditEntry): string {
@@ -14,12 +18,20 @@ function statusBadge(entry: RegistryAuditEntry): string {
   if (entry.hasInstallScript) {
     return `<span class="badge badge-warning">⚠ Install script</span>`;
   }
+  if (entry.registryIntegrityMissing) {
+    return `<span class="badge badge-warning">⚠ No registry integrity</span>`;
+  }
   return `<span class="badge badge-ok">✔ OK</span>`;
 }
 
 function rowClass(entry: RegistryAuditEntry): string {
   if (!entry.integrityMatch && entry.registryIntegrity !== null) return 'row-critical';
-  if (entry.notFoundOnRegistry || !entry.isStandardRegistry || entry.hasInstallScript)
+  if (
+    entry.notFoundOnRegistry ||
+    !entry.isStandardRegistry ||
+    entry.hasInstallScript ||
+    entry.registryIntegrityMissing
+  )
     return 'row-changed';
   return '';
 }
@@ -57,20 +69,15 @@ function entryRow(entry: RegistryAuditEntry): string {
 }
 
 export function generateRegistryAuditHtml(audit: RegistryAudit, projectName: string): string {
-  const criticalEntries = audit.entries.filter(
-    (e) => !e.integrityMatch && e.registryIntegrity !== null && !e.notFoundOnRegistry,
-  );
-  const warningEntries = audit.entries.filter(
-    (e) =>
-      (e.integrityMatch || e.registryIntegrity === null) &&
-      (!e.isStandardRegistry || e.notFoundOnRegistry || e.hasInstallScript),
-  );
+  const criticalEntries = audit.entries.filter(isCriticalRegistryEntry);
+  const warningEntries = audit.entries.filter(isRegistryWarningEntry);
   const okEntries = audit.entries.filter(
     (e) =>
       e.integrityMatch &&
       e.isStandardRegistry &&
       !e.notFoundOnRegistry &&
-      !e.hasInstallScript,
+      !e.hasInstallScript &&
+      !e.registryIntegrityMissing,
   );
 
   const sortedEntries = [...criticalEntries, ...warningEntries, ...okEntries];
