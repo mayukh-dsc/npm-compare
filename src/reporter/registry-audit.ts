@@ -1,8 +1,14 @@
-import type { RegistryAudit, RegistryAuditEntry } from '../types.js';
+import type {
+  DependencyTreeNode,
+  DependencyTrees,
+  RegistryAudit,
+  RegistryAuditEntry,
+} from '../types.js';
 import {
   isCriticalRegistryEntry,
   isRegistryWarningEntry,
 } from '../strategies/registry.js';
+import { renderDependencyTreeHtml } from './dep-tree-html.js';
 import { escapeHtml, truncate, formatDate, commonStyles, sortScript } from './shared.js';
 
 function statusBadge(entry: RegistryAuditEntry): string {
@@ -45,11 +51,11 @@ function entryRow(entry: RegistryAuditEntry): string {
         : `<span class="badge badge-warning">${escapeHtml(entry.latestVersion ?? '?')} available</span>`;
 
   return `<tr class="${rowClass(entry)}">
-    <td>
+    <td data-name="${escapeHtml(entry.name)}">
       <a href="https://www.npmjs.com/package/${escapeHtml(entry.name)}"
          target="_blank" rel="noopener noreferrer">${escapeHtml(entry.name)}</a>
     </td>
-    <td><span class="mono">${escapeHtml(entry.version)}</span> ${latestLabel}</td>
+    <td data-version="${escapeHtml(entry.version)}"><span class="mono">${escapeHtml(entry.version)}</span> ${latestLabel}</td>
     <td>${statusBadge(entry)}</td>
     <td class="mono" style="font-size:11px">
       ${
@@ -68,7 +74,25 @@ function entryRow(entry: RegistryAuditEntry): string {
   </tr>`;
 }
 
-export function generateRegistryAuditHtml(audit: RegistryAudit, projectName: string): string {
+function sortSectionSubset(entries: RegistryAuditEntry[]): RegistryAuditEntry[] {
+  const criticalEntries = entries.filter(isCriticalRegistryEntry);
+  const warningEntries = entries.filter(isRegistryWarningEntry);
+  const okEntries = entries.filter(
+    (e) =>
+      e.integrityMatch &&
+      e.isStandardRegistry &&
+      !e.notFoundOnRegistry &&
+      !e.hasInstallScript &&
+      !e.registryIntegrityMissing,
+  );
+  return [...criticalEntries, ...warningEntries, ...okEntries];
+}
+
+export function generateRegistryAuditHtml(
+  audit: RegistryAudit,
+  projectName: string,
+  dependencyTrees?: DependencyTrees,
+): string {
   const criticalEntries = audit.entries.filter(isCriticalRegistryEntry);
   const warningEntries = audit.entries.filter(isRegistryWarningEntry);
   const okEntries = audit.entries.filter(
@@ -80,8 +104,39 @@ export function generateRegistryAuditHtml(audit: RegistryAudit, projectName: str
       !e.registryIntegrityMissing,
   );
 
-  const sortedEntries = [...criticalEntries, ...warningEntries, ...okEntries];
-  const rows = sortedEntries.map((e) => entryRow(e)).join('\n');
+  const prodEntries = audit.entries.filter((e) => !e.dev);
+  const devEntries = audit.entries.filter((e) => e.dev);
+  const prodSorted = sortSectionSubset(prodEntries);
+  const devSorted = sortSectionSubset(devEntries);
+  const prodRows = prodSorted.map((e) => entryRow(e)).join('\n');
+  const devRows = devSorted.map((e) => entryRow(e)).join('\n');
+
+  const auditByKey = new Map<string, RegistryAuditEntry>();
+  for (const e of audit.entries) {
+    auditByKey.set(`${e.name}\0${e.version}`, e);
+  }
+
+  const registryTreeLine = (node: DependencyTreeNode): string => {
+    const pkg = node.entry;
+    const ae = auditByKey.get(`${pkg.name}\0${pkg.version}`);
+    const badge = ae ? statusBadge(ae) : '<span class="badge badge-warning">—</span>';
+    const integ = ae
+      ? escapeHtml(truncate(ae.lockfileIntegrity, 18))
+      : escapeHtml(truncate(pkg.integrity, 18));
+
+    return `
+    <a href="https://www.npmjs.com/package/${escapeHtml(pkg.name)}"
+       target="_blank" rel="noopener noreferrer">${escapeHtml(pkg.name)}</a>
+    <span class="mono">${escapeHtml(pkg.version)}</span>
+    <span class="badge ${pkg.dev ? 'badge-dev' : 'badge-prod'}">${pkg.dev ? 'dev' : 'prod'}</span>
+    ${badge}
+    <span class="mono text-muted tree-int" title="${escapeHtml(ae?.lockfileIntegrity ?? pkg.integrity)}">${integ}</span>
+  `;
+  };
+
+  const trees = dependencyTrees ?? { production: [], development: [] };
+  const prodTreeHtml = renderDependencyTreeHtml(trees.production, registryTreeLine);
+  const devTreeHtml = renderDependencyTreeHtml(trees.development, registryTreeLine);
 
   return `<!DOCTYPE html>
 <html lang="en">
@@ -104,6 +159,8 @@ export function generateRegistryAuditHtml(audit: RegistryAudit, projectName: str
         <span><strong>Registry:</strong> ${escapeHtml(audit.registryUrl)}</span>
         <span><strong>Audited:</strong> ${formatDate(audit.auditedAt)}</span>
         <span><strong>Packages audited:</strong> ${audit.entries.length.toLocaleString()}</span>
+        <span><strong>Production:</strong> ${prodEntries.length.toLocaleString()}</span>
+        <span><strong>Development:</strong> ${devEntries.length.toLocaleString()}</span>
       </div>
     </header>
 
@@ -144,26 +201,63 @@ export function generateRegistryAuditHtml(audit: RegistryAudit, projectName: str
 
     <div class="toolbar">
       <input id="search" class="search-input" type="text"
-             placeholder="Search packages…" />
+             placeholder="Filter production &amp; dev trees and flat tables…" />
     </div>
 
-    <div class="table-wrapper">
-      <table id="audit-table">
-        <thead>
-          <tr>
-            <th data-sort="name">Package ↕</th>
-            <th data-sort="version">Version ↕</th>
-            <th>Status</th>
-            <th>Integrity (lock file vs registry)</th>
-            <th>Resolved URL</th>
-            <th>Install script</th>
-          </tr>
-        </thead>
-        <tbody>
-          ${rows}
-        </tbody>
-      </table>
-    </div>
+    <section class="report-section" aria-labelledby="reg-sec-prod">
+      <h2 id="reg-sec-prod">Production dependencies</h2>
+      <p class="text-muted" style="font-size:13px;margin-bottom:8px">
+        Audit status is merged onto each node in the lock file dependency tree (same order as the installed report).
+      </p>
+      <div id="reg-dep-tree-prod" class="tree-panel">${prodTreeHtml}</div>
+
+      <details class="flat-toggle">
+        <summary>Flat table (sortable)</summary>
+        <div class="table-wrapper" style="margin-top:10px">
+          <table id="audit-table-prod">
+            <thead>
+              <tr>
+                <th data-sort="name">Package ↕</th>
+                <th data-sort="version">Version ↕</th>
+                <th>Status</th>
+                <th>Integrity (lock file vs registry)</th>
+                <th>Resolved URL</th>
+                <th>Install script</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${prodRows}
+            </tbody>
+          </table>
+        </div>
+      </details>
+    </section>
+
+    <section class="report-section" aria-labelledby="reg-sec-dev">
+      <h2 id="reg-sec-dev">Development dependencies</h2>
+      <div id="reg-dep-tree-dev" class="tree-panel">${devTreeHtml}</div>
+
+      <details class="flat-toggle">
+        <summary>Flat table (sortable)</summary>
+        <div class="table-wrapper" style="margin-top:10px">
+          <table id="audit-table-dev">
+            <thead>
+              <tr>
+                <th data-sort="name">Package ↕</th>
+                <th data-sort="version">Version ↕</th>
+                <th>Status</th>
+                <th>Integrity (lock file vs registry)</th>
+                <th>Resolved URL</th>
+                <th>Install script</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${devRows}
+            </tbody>
+          </table>
+        </div>
+      </details>
+    </section>
 
     <footer>
       Generated by
@@ -175,8 +269,9 @@ export function generateRegistryAuditHtml(audit: RegistryAudit, projectName: str
   </div>
   <script>
     ${sortScript()}
-    initSort('audit-table');
-    initSearch('search', 'audit-table');
+    initSort('audit-table-prod');
+    initSort('audit-table-dev');
+    initReportSearch('search', ['audit-table-prod', 'audit-table-dev'], ['reg-dep-tree-prod', 'reg-dep-tree-dev']);
   </script>
 </body>
 </html>`;

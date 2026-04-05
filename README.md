@@ -75,10 +75,10 @@ By default, HTML reports are written under `**.npm-compare/**` in your project r
 
 | File                                           | Description                                                    |
 | ---------------------------------------------- | -------------------------------------------------------------- |
-| `.npm-compare/npm-compare-installed.html`      | All installed packages: name, version, integrity, resolved URL |
-| `.npm-compare/npm-compare-diff-git.html`       | Diff vs last git commit: added, removed, changed packages      |
-| `.npm-compare/npm-compare-audit-registry.html` | Live integrity audit against npm registry                      |
-| `.npm-compare-snapshot.json`                   | Committed snapshot at project root (required for git strategy) |
+| `.npm-compare/npm-compare-installed.html`      | Installed packages: **production** and **development** sections, each with a **collapsible dependency tree** (transitive chain) plus an optional flat sortable table |
+| `.npm-compare/npm-compare-diff-git.html`       | Git diff vs last commit: changes split into production vs development dependency sections |
+| `.npm-compare/npm-compare-audit-registry.html` | Registry audit: same prod/dev split; trees show audit status per node |
+| `.npm-compare-snapshot.json`                   | Committed snapshot at project root (required for git strategy). Does not store dependency trees (only the flat package list). |
 
 
 > **Important for the git strategy:** commit `.npm-compare-snapshot.json` to your repository. It is updated on every `npm install` and git-tracked, so you always have a diff target.

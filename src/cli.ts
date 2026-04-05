@@ -182,7 +182,7 @@ program
       const registryAuditPath = path.join(outputDir, 'npm-compare-audit-registry.html');
       fs.writeFileSync(
         registryAuditPath,
-        generateRegistryAuditHtml(audit, snapshot.projectName),
+        generateRegistryAuditHtml(audit, snapshot.projectName, snapshot.dependencyTrees),
         'utf8',
       );
 

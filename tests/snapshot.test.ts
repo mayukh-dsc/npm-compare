@@ -77,4 +77,19 @@ describe('writeSnapshot', () => {
 
     expect(result).toEqual(snapshot);
   });
+
+  it('does not persist dependencyTrees (in-memory only)', () => {
+    const snapshot: Snapshot = {
+      ...makeSnapshot(),
+      dependencyTrees: {
+        production: [],
+        development: [],
+      },
+    };
+    const filePath = path.join(tmpDir, 'with-trees.json');
+    writeSnapshot(filePath, snapshot);
+    const result = readSnapshot(filePath);
+    expect(result?.dependencyTrees).toBeUndefined();
+    expect(result).toEqual(makeSnapshot());
+  });
 });

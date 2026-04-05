@@ -1,5 +1,60 @@
-import type { Snapshot } from '../types.js';
+import type { DependencyTreeNode, Snapshot } from '../types.js';
+import { renderDependencyTreeHtml } from './dep-tree-html.js';
 import { escapeHtml, truncate, formatDate, commonStyles, sortScript } from './shared.js';
+
+function packageRow(pkg: {
+  name: string;
+  version: string;
+  integrity: string;
+  resolved: string;
+  dev?: boolean;
+}): string {
+  const isStandard =
+    pkg.resolved === '' ||
+    pkg.resolved.startsWith('https://registry.npmjs.org/') ||
+    pkg.resolved.startsWith('https://registry.yarnpkg.com/');
+
+  return `<tr>
+    <td data-name="${escapeHtml(pkg.name)}">
+      <a href="https://www.npmjs.com/package/${escapeHtml(pkg.name)}"
+         target="_blank" rel="noopener noreferrer">${escapeHtml(pkg.name)}</a>
+    </td>
+    <td data-version="${escapeHtml(pkg.version)}">
+      <span class="mono">${escapeHtml(pkg.version)}</span>
+    </td>
+    <td>
+      <span class="badge ${pkg.dev ? 'badge-dev' : 'badge-prod'}">
+        ${pkg.dev ? 'dev' : 'prod'}
+      </span>
+    </td>
+    <td class="mono text-muted" title="${escapeHtml(pkg.integrity)}">
+      ${escapeHtml(truncate(pkg.integrity, 24))}
+    </td>
+    <td class="${isStandard ? 'text-muted' : 'text-warning'}"
+        title="${escapeHtml(pkg.resolved)}">
+      ${isStandard ? '' : '<span class="badge badge-warning">⚠ Non-standard</span> '}
+      ${escapeHtml(truncate(pkg.resolved, 70))}
+    </td>
+  </tr>`;
+}
+
+function installedTreeLine(node: DependencyTreeNode): string {
+  const pkg = node.entry;
+  const isStandard =
+    pkg.resolved === '' ||
+    pkg.resolved.startsWith('https://registry.npmjs.org/') ||
+    pkg.resolved.startsWith('https://registry.yarnpkg.com/');
+
+  return `
+    <a href="https://www.npmjs.com/package/${escapeHtml(pkg.name)}"
+       target="_blank" rel="noopener noreferrer">${escapeHtml(pkg.name)}</a>
+    <span class="mono">${escapeHtml(pkg.version)}</span>
+    <span class="badge ${pkg.dev ? 'badge-dev' : 'badge-prod'}">${pkg.dev ? 'dev' : 'prod'}</span>
+    <span class="mono text-muted tree-int" title="${escapeHtml(pkg.integrity)}">${escapeHtml(truncate(pkg.integrity, 20))}</span>
+    ${!isStandard ? '<span class="badge badge-warning">⚠ Non-standard</span>' : ''}
+    <span class="tree-res text-muted" title="${escapeHtml(pkg.resolved)}">${escapeHtml(truncate(pkg.resolved, 48))}</span>
+  `;
+}
 
 export function generateInstalledHtml(snapshot: Snapshot): string {
   const devCount = snapshot.packages.filter((p) => p.dev).length;
@@ -11,37 +66,15 @@ export function generateInstalledHtml(snapshot: Snapshot): string {
       !p.resolved.startsWith('https://registry.yarnpkg.com/'),
   ).length;
 
-  const rows = snapshot.packages
-    .map((pkg) => {
-      const isStandard =
-        pkg.resolved === '' ||
-        pkg.resolved.startsWith('https://registry.npmjs.org/') ||
-        pkg.resolved.startsWith('https://registry.yarnpkg.com/');
+  const trees = snapshot.dependencyTrees ?? { production: [], development: [] };
+  const prodPkgs = snapshot.packages.filter((p) => !p.dev);
+  const devPkgs = snapshot.packages.filter((p) => p.dev);
 
-      return `<tr>
-        <td data-name="${escapeHtml(pkg.name)}">
-          <a href="https://www.npmjs.com/package/${escapeHtml(pkg.name)}"
-             target="_blank" rel="noopener noreferrer">${escapeHtml(pkg.name)}</a>
-        </td>
-        <td data-version="${escapeHtml(pkg.version)}">
-          <span class="mono">${escapeHtml(pkg.version)}</span>
-        </td>
-        <td>
-          <span class="badge ${pkg.dev ? 'badge-dev' : 'badge-prod'}">
-            ${pkg.dev ? 'dev' : 'prod'}
-          </span>
-        </td>
-        <td class="mono text-muted" title="${escapeHtml(pkg.integrity)}">
-          ${escapeHtml(truncate(pkg.integrity, 24))}
-        </td>
-        <td class="${isStandard ? 'text-muted' : 'text-warning'}"
-            title="${escapeHtml(pkg.resolved)}">
-          ${isStandard ? '' : '<span class="badge badge-warning">⚠ Non-standard</span> '}
-          ${escapeHtml(truncate(pkg.resolved, 70))}
-        </td>
-      </tr>`;
-    })
-    .join('\n');
+  const prodRows = prodPkgs.map((p) => packageRow(p)).join('\n');
+  const devRows = devPkgs.map((p) => packageRow(p)).join('\n');
+
+  const prodTreeHtml = renderDependencyTreeHtml(trees.production, installedTreeLine);
+  const devTreeHtml = renderDependencyTreeHtml(trees.development, installedTreeLine);
 
   return `<!DOCTYPE html>
 <html lang="en">
@@ -103,28 +136,67 @@ export function generateInstalledHtml(snapshot: Snapshot): string {
 
     <div class="toolbar">
       <input id="search" class="search-input" type="text"
-             placeholder="Search packages by name, version, or URL…" />
+             placeholder="Filter production &amp; dev trees and flat tables…" />
       <span class="text-muted" style="font-size:12px">
         ${snapshot.packages.length.toLocaleString()} packages total
       </span>
     </div>
 
-    <div class="table-wrapper">
-      <table id="pkg-table">
-        <thead>
-          <tr>
-            <th data-sort="name">Package ↕</th>
-            <th data-sort="version">Version ↕</th>
-            <th>Type</th>
-            <th>Integrity (sha512)</th>
-            <th>Resolved URL</th>
-          </tr>
-        </thead>
-        <tbody>
-          ${rows}
-        </tbody>
-      </table>
-    </div>
+    <section class="report-section" aria-labelledby="sec-prod">
+      <h2 id="sec-prod">Production dependencies</h2>
+      <p class="text-muted" style="font-size:13px;margin-bottom:8px">
+        Direct production roots and their transitive dependencies (from the lock file). Nested nodes are collapsible.
+      </p>
+      <div id="dep-tree-prod" class="tree-panel">${prodTreeHtml}</div>
+
+      <details class="flat-toggle">
+        <summary>Flat table (sortable)</summary>
+        <div class="table-wrapper" style="margin-top:10px">
+          <table id="pkg-table-prod">
+            <thead>
+              <tr>
+                <th data-sort="name">Package ↕</th>
+                <th data-sort="version">Version ↕</th>
+                <th>Type</th>
+                <th>Integrity (sha512)</th>
+                <th>Resolved URL</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${prodRows}
+            </tbody>
+          </table>
+        </div>
+      </details>
+    </section>
+
+    <section class="report-section" aria-labelledby="sec-dev">
+      <h2 id="sec-dev">Development dependencies</h2>
+      <p class="text-muted" style="font-size:13px;margin-bottom:8px">
+        Dev-only dependency roots and their transitive dependencies.
+      </p>
+      <div id="dep-tree-dev" class="tree-panel">${devTreeHtml}</div>
+
+      <details class="flat-toggle">
+        <summary>Flat table (sortable)</summary>
+        <div class="table-wrapper" style="margin-top:10px">
+          <table id="pkg-table-dev">
+            <thead>
+              <tr>
+                <th data-sort="name">Package ↕</th>
+                <th data-sort="version">Version ↕</th>
+                <th>Type</th>
+                <th>Integrity (sha512)</th>
+                <th>Resolved URL</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${devRows}
+            </tbody>
+          </table>
+        </div>
+      </details>
+    </section>
 
     <footer>
       Generated by
@@ -136,8 +208,9 @@ export function generateInstalledHtml(snapshot: Snapshot): string {
   </div>
   <script>
     ${sortScript()}
-    initSort('pkg-table');
-    initSearch('search', 'pkg-table');
+    initSort('pkg-table-prod');
+    initSort('pkg-table-dev');
+    initReportSearch('search', ['pkg-table-prod', 'pkg-table-dev'], ['dep-tree-prod', 'dep-tree-dev']);
   </script>
 </body>
 </html>`;

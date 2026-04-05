@@ -80,6 +80,12 @@ describe('generateRegistryAuditHtml', () => {
     expect(html).toContain('registry.npmjs.org');
   });
 
+  it('renders production and development sections', () => {
+    const html = generateRegistryAuditHtml(makeAudit(), 'my-project');
+    expect(html).toContain('Production dependencies');
+    expect(html).toContain('Development dependencies');
+  });
+
   it('escapes HTML in package names', () => {
     const audit = makeAudit({
       entries: [

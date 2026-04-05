@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- HTML reports group content by **production** vs **development** dependencies.
+- **Installed** and **registry audit** reports include **nested dependency trees** (from the lock file) with collapsible nodes; flat sortable tables are available under each section.
+- **Git diff** report lists changes in separate production and development sections.
+- `RegistryAuditEntry` includes `dev` (from the lock file) for sectioning.
+- Public exports: `DependencyTreeNode`, `DependencyTrees`, `buildDependencyTrees`, `getParentLockfilePath`.
+
 ### Changed
 - Default `outputDir` is `.npm-compare` so HTML reports are grouped in one directory instead of the project root.
 - Git snapshot reads use `execFile` (no shell) and validate `snapshotFile` to prevent command injection.

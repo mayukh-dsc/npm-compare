@@ -7,6 +7,19 @@ export interface PackageEntry {
   optional?: boolean;
 }
 
+/** Nested dependency tree from the lock file (logical roots split into prod vs dev). */
+export interface DependencyTreeNode {
+  /** Lockfile path key (npm v2+) or synthetic path (v1). */
+  pathKey: string;
+  entry: PackageEntry;
+  children: DependencyTreeNode[];
+}
+
+export interface DependencyTrees {
+  production: DependencyTreeNode[];
+  development: DependencyTreeNode[];
+}
+
 export interface Snapshot {
   generatedAt: string;
   projectName: string;
@@ -14,6 +27,10 @@ export interface Snapshot {
   nodeVersion: string;
   lockfileVersion: number;
   packages: PackageEntry[];
+  /**
+   * In-memory only: omitted when writing `.npm-compare-snapshot.json` to keep snapshots small.
+   */
+  dependencyTrees?: DependencyTrees;
 }
 
 export interface ChangedPackage {
@@ -38,6 +55,8 @@ export interface PackageDiff {
 export interface RegistryAuditEntry {
   name: string;
   version: string;
+  /** From lock file (devDependency vs dependency). */
+  dev?: boolean;
   lockfileIntegrity: string;
   /** null when package is not found on registry or fetch failed */
   registryIntegrity: string | null;

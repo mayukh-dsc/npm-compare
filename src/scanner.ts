@@ -1,5 +1,6 @@
 import fs from 'node:fs';
-import type { PackageEntry, Snapshot } from './types.js';
+import { buildDependencyTrees } from './dependency-tree.js';
+import type { DependencyTrees, PackageEntry, Snapshot } from './types.js';
 
 interface LockfileV1Dependency {
   version: string;
@@ -64,6 +65,7 @@ export interface ParsedLockfile {
   lockfileVersion: number;
   projectName: string;
   projectVersion: string;
+  dependencyTrees: DependencyTrees;
 }
 
 export function parseLockfile(lockfilePath: string): ParsedLockfile {
@@ -109,11 +111,13 @@ export function parseLockfile(lockfilePath: string): ParsedLockfile {
   packages = dedupeLockfilePackages(packages);
   packages.sort((a, b) => a.name.localeCompare(b.name));
 
-  return { packages, lockfileVersion, projectName, projectVersion };
+  const dependencyTrees = buildDependencyTrees(lockfile, lockfileVersion);
+
+  return { packages, lockfileVersion, projectName, projectVersion, dependencyTrees };
 }
 
 export function buildSnapshot(lockfilePath: string): Snapshot {
-  const { packages, lockfileVersion, projectName, projectVersion } =
+  const { packages, lockfileVersion, projectName, projectVersion, dependencyTrees } =
     parseLockfile(lockfilePath);
 
   return {
@@ -123,5 +127,6 @@ export function buildSnapshot(lockfilePath: string): Snapshot {
     nodeVersion: process.version,
     lockfileVersion,
     packages,
+    dependencyTrees,
   };
 }

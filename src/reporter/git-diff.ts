@@ -3,7 +3,7 @@ import { escapeHtml, truncate, formatDate, commonStyles, sortScript } from './sh
 
 function packageRow(pkg: PackageEntry, rowClass: string, badge: string): string {
   return `<tr class="${rowClass}">
-    <td>
+    <td data-name="${escapeHtml(pkg.name)}">
       <a href="https://www.npmjs.com/package/${escapeHtml(pkg.name)}"
          target="_blank" rel="noopener noreferrer">${escapeHtml(pkg.name)}</a>
     </td>
@@ -19,7 +19,7 @@ function changedRow(c: ChangedPackage): string {
   const rowClass = isCritical ? 'row-critical' : 'row-changed';
 
   return `<tr class="${rowClass}">
-    <td>
+    <td data-name="${escapeHtml(c.name)}">
       <a href="https://www.npmjs.com/package/${escapeHtml(c.name)}"
          target="_blank" rel="noopener noreferrer">${escapeHtml(c.name)}</a>
     </td>
@@ -59,12 +59,31 @@ export function generateGitDiffHtml(diff: PackageDiff, projectName: string): str
     (c) => !(c.integrityChanged && !c.versionChanged),
   );
 
-  const allRows = [
-    ...criticalChanges.map((c) => changedRow(c)),
-    ...nonCriticalChanges.map((c) => changedRow(c)),
-    ...diff.added.map((p) => packageRow(p, 'row-added', 'Added|badge-added')),
-    ...diff.removed.map((p) => packageRow(p, 'row-removed', 'Removed|badge-removed')),
-  ].join('\n');
+  const prodCritical = criticalChanges.filter((c) => !c.to.dev);
+  const prodNonCritical = nonCriticalChanges.filter((c) => !c.to.dev);
+  const prodAdded = diff.added.filter((p) => !p.dev);
+  const prodRemoved = diff.removed.filter((p) => !p.dev);
+
+  const devCritical = criticalChanges.filter((c) => c.to.dev);
+  const devNonCritical = nonCriticalChanges.filter((c) => c.to.dev);
+  const devAdded = diff.added.filter((p) => p.dev);
+  const devRemoved = diff.removed.filter((p) => p.dev);
+
+  const buildSectionRows = (
+    crit: ChangedPackage[],
+    nonCrit: ChangedPackage[],
+    added: PackageEntry[],
+    removed: PackageEntry[],
+  ): string =>
+    [
+      ...crit.map((c) => changedRow(c)),
+      ...nonCrit.map((c) => changedRow(c)),
+      ...added.map((p) => packageRow(p, 'row-added', 'Added|badge-added')),
+      ...removed.map((p) => packageRow(p, 'row-removed', 'Removed|badge-removed')),
+    ].join('\n');
+
+  const prodRows = buildSectionRows(prodCritical, prodNonCritical, prodAdded, prodRemoved);
+  const devRows = buildSectionRows(devCritical, devNonCritical, devAdded, devRemoved);
 
   const totalChanged = diff.changed.length + diff.added.length + diff.removed.length;
   const generatedAt = new Date().toISOString();
@@ -139,24 +158,56 @@ export function generateGitDiffHtml(diff: PackageDiff, projectName: string): str
       totalChanged > 0
         ? `<div class="toolbar">
             <input id="search" class="search-input" type="text"
-                   placeholder="Search changed packages…" />
+                   placeholder="Filter production &amp; dev change tables…" />
           </div>
-          <div class="table-wrapper">
-            <table id="diff-table">
-              <thead>
-                <tr>
-                  <th data-sort="name">Package ↕</th>
-                  <th>Version</th>
-                  <th>Change</th>
-                  <th>Integrity</th>
-                  <th>Resolved URL</th>
-                </tr>
-              </thead>
-              <tbody>
-                ${allRows}
-              </tbody>
-            </table>
-          </div>`
+
+          <section class="report-section" aria-labelledby="git-sec-prod">
+            <h2 id="git-sec-prod">Production dependency changes</h2>
+            ${
+              prodRows.length === 0
+                ? `<p class="text-muted" style="font-size:13px">No production dependency changes.</p>`
+                : `<div class="table-wrapper">
+                    <table id="diff-table-prod">
+                      <thead>
+                        <tr>
+                          <th data-sort="name">Package ↕</th>
+                          <th>Version</th>
+                          <th>Change</th>
+                          <th>Integrity</th>
+                          <th>Resolved URL</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        ${prodRows}
+                      </tbody>
+                    </table>
+                  </div>`
+            }
+          </section>
+
+          <section class="report-section" aria-labelledby="git-sec-dev">
+            <h2 id="git-sec-dev">Development dependency changes</h2>
+            ${
+              devRows.length === 0
+                ? `<p class="text-muted" style="font-size:13px">No development dependency changes.</p>`
+                : `<div class="table-wrapper">
+                    <table id="diff-table-dev">
+                      <thead>
+                        <tr>
+                          <th data-sort="name">Package ↕</th>
+                          <th>Version</th>
+                          <th>Change</th>
+                          <th>Integrity</th>
+                          <th>Resolved URL</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        ${devRows}
+                      </tbody>
+                    </table>
+                  </div>`
+            }
+          </section>`
         : `<div class="alert alert-success" style="margin-top: 8px;">
             No changes to display.
            </div>`
@@ -172,8 +223,9 @@ export function generateGitDiffHtml(diff: PackageDiff, projectName: string): str
   </div>
   <script>
     ${sortScript()}
-    initSort('diff-table');
-    initSearch('search', 'diff-table');
+    initSort('diff-table-prod');
+    initSort('diff-table-dev');
+    initReportSearch('search', ['diff-table-prod', 'diff-table-dev'], []);
   </script>
 </body>
 </html>`;

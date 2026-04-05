@@ -56,6 +56,13 @@ describe('generateInstalledHtml', () => {
     expect(html).toContain('badge-prod');
   });
 
+  it('groups output into production and development sections', () => {
+    const html = generateInstalledHtml(makeSnapshot());
+    expect(html).toContain('Production dependencies');
+    expect(html).toContain('Development dependencies');
+    expect(html).toContain('dep-tree');
+  });
+
   it('shows warning for non-standard registry URLs', () => {
     const snapshot = makeSnapshot({
       packages: [

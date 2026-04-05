@@ -96,6 +96,7 @@ async function auditSingle(
       return {
         name: pkg.name,
         version: pkg.version,
+        dev: pkg.dev ?? false,
         lockfileIntegrity: pkg.integrity,
         registryIntegrity: null,
         lockfileResolved: pkg.resolved,
@@ -127,6 +128,7 @@ async function auditSingle(
     return {
       name: pkg.name,
       version: pkg.version,
+      dev: pkg.dev ?? false,
       lockfileIntegrity: pkg.integrity,
       registryIntegrity,
       lockfileResolved: pkg.resolved,
@@ -145,6 +147,7 @@ async function auditSingle(
     return {
       name: pkg.name,
       version: pkg.version,
+      dev: pkg.dev ?? false,
       lockfileIntegrity: pkg.integrity,
       registryIntegrity: null,
       lockfileResolved: pkg.resolved,

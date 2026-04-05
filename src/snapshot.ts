@@ -15,5 +15,7 @@ export function readSnapshot(snapshotPath: string): Snapshot | null {
 }
 
 export function writeSnapshot(snapshotPath: string, snapshot: Snapshot): void {
-  fs.writeFileSync(snapshotPath, JSON.stringify(snapshot, null, 2) + '\n', 'utf8');
+  const persisted = { ...snapshot };
+  delete persisted.dependencyTrees;
+  fs.writeFileSync(snapshotPath, JSON.stringify(persisted, null, 2) + '\n', 'utf8');
 }

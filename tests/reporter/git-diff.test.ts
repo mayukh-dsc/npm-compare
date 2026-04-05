@@ -68,6 +68,25 @@ describe('generateGitDiffHtml', () => {
     const html = generateGitDiffHtml(diff, 'my-project');
     expect(html).toContain('new-package');
     expect(html).toContain('badge-added');
+    expect(html).toContain('Production dependency changes');
+  });
+
+  it('places dev-only changes under the development section', () => {
+    const diff: PackageDiff = {
+      ...makeEmptyDiff(),
+      added: [
+        {
+          name: 'vitest',
+          version: '1.0.0',
+          integrity: 'sha512-dev==',
+          resolved: 'https://registry.npmjs.org/vitest.tgz',
+          dev: true,
+        },
+      ],
+    };
+    const html = generateGitDiffHtml(diff, 'my-project');
+    expect(html).toContain('vitest');
+    expect(html).toContain('Development dependency changes');
   });
 
   it('renders version-only change (non-critical)', () => {

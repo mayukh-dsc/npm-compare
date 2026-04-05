@@ -1,3 +1,4 @@
+export { buildDependencyTrees, getParentLockfilePath } from './dependency-tree.js';
 export {
   parseLockfile,
   buildSnapshot,
@@ -21,6 +22,8 @@ export { generateRegistryAuditHtml } from './reporter/registry-audit.js';
 export type {
   PackageEntry,
   Snapshot,
+  DependencyTreeNode,
+  DependencyTrees,
   ChangedPackage,
   PackageDiff,
   RegistryAuditEntry,

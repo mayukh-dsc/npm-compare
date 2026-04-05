@@ -18,5 +18,7 @@ describe('public API (index.ts)', () => {
     expect(api.generateInstalledHtml).toBeTypeOf('function');
     expect(api.generateGitDiffHtml).toBeTypeOf('function');
     expect(api.generateRegistryAuditHtml).toBeTypeOf('function');
+    expect(api.buildDependencyTrees).toBeTypeOf('function');
+    expect(api.getParentLockfilePath).toBeTypeOf('function');
   });
 });
