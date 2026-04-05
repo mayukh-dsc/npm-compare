@@ -1,9 +1,9 @@
 import type { RegistryAudit, RegistryAuditEntry } from '../types.js';
+import {
+  isCriticalRegistryEntry,
+  isRegistryWarningEntry,
+} from '../strategies/registry.js';
 import { escapeHtml, truncate, formatDate, commonStyles, sortScript } from './shared.js';
-
-function isCriticalEntry(e: RegistryAuditEntry): boolean {
-  return !e.integrityMatch && e.registryIntegrity !== null && !e.notFoundOnRegistry;
-}
 
 function statusBadge(entry: RegistryAuditEntry): string {
   if (!entry.integrityMatch && entry.registryIntegrity !== null) {
@@ -69,15 +69,8 @@ function entryRow(entry: RegistryAuditEntry): string {
 }
 
 export function generateRegistryAuditHtml(audit: RegistryAudit, projectName: string): string {
-  const criticalEntries = audit.entries.filter(isCriticalEntry);
-  const warningEntries = audit.entries.filter(
-    (e) =>
-      !isCriticalEntry(e) &&
-      (e.notFoundOnRegistry ||
-        !e.isStandardRegistry ||
-        e.hasInstallScript ||
-        !!e.registryIntegrityMissing),
-  );
+  const criticalEntries = audit.entries.filter(isCriticalRegistryEntry);
+  const warningEntries = audit.entries.filter(isRegistryWarningEntry);
   const okEntries = audit.entries.filter(
     (e) =>
       e.integrityMatch &&

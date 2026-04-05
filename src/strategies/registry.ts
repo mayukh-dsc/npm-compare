@@ -16,6 +16,25 @@ interface RegistryPackageData {
   versions: Record<string, RegistryVersionData>;
 }
 
+/** Lockfile integrity differs from registry — Critical section in reports. */
+export function isCriticalRegistryEntry(e: RegistryAuditEntry): boolean {
+  return !e.integrityMatch && e.registryIntegrity !== null && !e.notFoundOnRegistry;
+}
+
+/**
+ * Rows shown under Warnings in HTML (excludes critical rows even if they also have install scripts, etc.).
+ * Keep in sync with `generateRegistryAuditHtml` warning filter.
+ */
+export function isRegistryWarningEntry(e: RegistryAuditEntry): boolean {
+  return (
+    !isCriticalRegistryEntry(e) &&
+    (e.notFoundOnRegistry ||
+      !e.isStandardRegistry ||
+      e.hasInstallScript ||
+      !!e.registryIntegrityMissing)
+  );
+}
+
 function fetchJson<T>(url: string, timeout: number): Promise<T> {
   return new Promise((resolve, reject) => {
     const req = https.get(url, { timeout }, (res) => {
@@ -176,17 +195,9 @@ export async function auditRegistry(
   const tasks = packages.map((pkg) => () => auditSingle(pkg, registryUrl, timeout));
   const entries = await withConcurrency(tasks, concurrency, onProgress);
 
-  const criticalCount = entries.filter(
-    (e) => !e.integrityMatch && e.registryIntegrity !== null && !e.notFoundOnRegistry,
-  ).length;
+  const criticalCount = entries.filter(isCriticalRegistryEntry).length;
 
-  const warningCount = entries.filter(
-    (e) =>
-      !e.isStandardRegistry ||
-      e.notFoundOnRegistry ||
-      e.hasInstallScript ||
-      !!e.registryIntegrityMissing,
-  ).length;
+  const warningCount = entries.filter(isRegistryWarningEntry).length;
 
   return {
     strategy: 'registry',

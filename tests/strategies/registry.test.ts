@@ -114,6 +114,32 @@ describe('auditRegistry', () => {
     expect(result.criticalCount).toBe(1);
   });
 
+  it('does not count critical rows as warnings when they also have install scripts', async () => {
+    const registryResponse = {
+      'dist-tags': { latest: '1.0.0' },
+      versions: {
+        '1.0.0': {
+          version: '1.0.0',
+          dist: { integrity: 'sha512-REGISTRY==', shasum: 'abc', tarball: '...' },
+          scripts: { postinstall: 'node ./evil.js' },
+        },
+      },
+    };
+
+    mockHttpsGet(200, registryResponse);
+
+    const result = await auditRegistry(
+      [pkg({ name: 'tampered-with-script', integrity: 'sha512-TAMPERED==' })],
+      'https://registry.npmjs.org',
+      1,
+      5000,
+    );
+
+    expect(result.criticalCount).toBe(1);
+    expect(result.warningCount).toBe(0);
+    expect(result.entries[0]?.hasInstallScript).toBe(true);
+  });
+
   it('handles invalid JSON from registry', async () => {
     vi.mocked(https.get).mockImplementationOnce((_url, _opts, callback) => {
       const cb = callback as GetCallback;

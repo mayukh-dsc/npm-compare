@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - CLI `--concurrency` / `--timeout` reject non-numeric values and clamp to safe ranges (falls back to config defaults).
 - `--version` reports the version from root `package.json`.
 - Registry audit warns when the published package has no `dist.integrity` but the lock file does (integrity cannot be verified).
+- Registry `warningCount` matches the HTML warnings section (critical rows are not double-counted as warnings).
 
 ### Added
 - Initial implementation of `npm-compare generate` CLI command
