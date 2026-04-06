@@ -47,7 +47,7 @@ describe('generateIntroReportHtml', () => {
       hasGitBaseline: false,
       baselineReason: 'test skip',
     });
-    expect(html).toContain('npm-compare');
+    expect(html).toContain('what-new-pkg');
     expect(html).toContain('proj');
     expect(html).toContain('test skip');
   });

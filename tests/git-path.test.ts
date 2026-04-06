@@ -3,7 +3,7 @@ import { isSafeGitShowPath } from '../src/git-path.js';
 
 describe('isSafeGitShowPath', () => {
   it('allows normal snapshot paths', () => {
-    expect(isSafeGitShowPath('.npm-compare-snapshot.json')).toBe(true);
+    expect(isSafeGitShowPath('.what-new-pkg-snapshot.json')).toBe(true);
     expect(isSafeGitShowPath('reports/snapshot.json')).toBe(true);
   });
 

@@ -5,4 +5,4 @@ coverage/
 .DS_Store
 
 # Generated HTML reports (consumer projects; harmless if present during local dev)
-.npm-compare/
+.what-new-pkg/

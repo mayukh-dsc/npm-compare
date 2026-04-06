@@ -31,7 +31,7 @@ describe('cli', () => {
   });
 
   it('setup adds postinstall hook', () => {
-    const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'npm-compare-cli-'));
+    const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'what-new-pkg-cli-'));
     try {
       fs.writeFileSync(
         path.join(tmp, 'package.json'),
@@ -42,14 +42,14 @@ describe('cli', () => {
       const pkg = JSON.parse(fs.readFileSync(path.join(tmp, 'package.json'), 'utf8')) as {
         scripts: Record<string, string>;
       };
-      expect(pkg.scripts['postinstall']).toContain('npm-compare generate');
+      expect(pkg.scripts['postinstall']).toContain('what-new-pkg generate');
     } finally {
       fs.rmSync(tmp, { recursive: true, force: true });
     }
   });
 
-  it('generate writes npm-compare.html', () => {
-    const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'npm-compare-gen-'));
+  it('generate writes what-new-pkg.html', () => {
+    const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'what-new-pkg-gen-'));
     try {
       const fixture = path.join(repoRoot, 'tests/fixtures/package-lock.v2.json');
       fs.copyFileSync(fixture, path.join(tmp, 'package-lock.json'));
@@ -59,7 +59,7 @@ describe('cli', () => {
         'utf8',
       );
       runCli(['generate', '--cwd', tmp], tmp);
-      const html = path.join(tmp, '.npm-compare', 'npm-compare.html');
+      const html = path.join(tmp, '.what-new-pkg', 'what-new-pkg.html');
       expect(fs.existsSync(html)).toBe(true);
       expect(fs.readFileSync(html, 'utf8')).toContain('Newly introduced dependencies');
     } finally {

@@ -7,7 +7,7 @@ import { loadConfig, mergeCliFlags } from '../src/config.js';
 let tmpDir: string;
 
 beforeEach(() => {
-  tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'npm-compare-config-test-'));
+  tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'what-new-pkg-config-test-'));
 });
 
 afterEach(() => {
@@ -17,17 +17,17 @@ afterEach(() => {
 describe('loadConfig', () => {
   it('returns defaults when no package.json exists', () => {
     const config = loadConfig(path.join(tmpDir, 'nonexistent'));
-    expect(config.outputDir).toBe('.npm-compare');
+    expect(config.outputDir).toBe('.what-new-pkg');
   });
 
-  it('returns defaults when package.json has no npm-compare section', () => {
+  it('returns defaults when package.json has no what-new-pkg section', () => {
     fs.writeFileSync(
       path.join(tmpDir, 'package.json'),
       JSON.stringify({ name: 'test', version: '1.0.0' }),
       'utf8',
     );
     const config = loadConfig(tmpDir);
-    expect(config.outputDir).toBe('.npm-compare');
+    expect(config.outputDir).toBe('.what-new-pkg');
   });
 
   it('overrides outputDir from config', () => {
@@ -35,7 +35,7 @@ describe('loadConfig', () => {
       path.join(tmpDir, 'package.json'),
       JSON.stringify({
         name: 'test',
-        'npm-compare': { outputDir: '.reports' },
+        'what-new-pkg': { outputDir: '.reports' },
       }),
       'utf8',
     );
@@ -46,7 +46,7 @@ describe('loadConfig', () => {
   it('returns defaults when package.json contains invalid JSON', () => {
     fs.writeFileSync(path.join(tmpDir, 'package.json'), '{ invalid }', 'utf8');
     const config = loadConfig(tmpDir);
-    expect(config.outputDir).toBe('.npm-compare');
+    expect(config.outputDir).toBe('.what-new-pkg');
   });
 });
 
@@ -60,6 +60,6 @@ describe('mergeCliFlags', () => {
   it('preserves base config for unset CLI flags', () => {
     const base = loadConfig(path.join(tmpDir, 'nonexistent'));
     const merged = mergeCliFlags(base, {});
-    expect(merged.outputDir).toBe('.npm-compare');
+    expect(merged.outputDir).toBe('.what-new-pkg');
   });
 });

@@ -1,20 +1,20 @@
 import fs from 'node:fs';
 import path from 'node:path';
-import type { NpmCompareConfig } from './types.js';
+import type { WhatNewPkgConfig } from './types.js';
 
-const DEFAULTS: NpmCompareConfig = {
-  outputDir: '.npm-compare',
+const DEFAULTS: WhatNewPkgConfig = {
+  outputDir: '.what-new-pkg',
 };
 
-interface PackageJsonNpmCompare {
+interface PackageJsonWhatNewPkg {
   outputDir?: string;
 }
 
 interface PackageJsonWithConfig {
-  'npm-compare'?: PackageJsonNpmCompare;
+  'what-new-pkg'?: PackageJsonWhatNewPkg;
 }
 
-export function loadConfig(projectRoot: string): NpmCompareConfig {
+export function loadConfig(projectRoot: string): WhatNewPkgConfig {
   const pkgPath = path.join(projectRoot, 'package.json');
   if (!fs.existsSync(pkgPath)) {
     return { ...DEFAULTS };
@@ -22,7 +22,7 @@ export function loadConfig(projectRoot: string): NpmCompareConfig {
 
   try {
     const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf8')) as PackageJsonWithConfig;
-    const userConfig = pkg['npm-compare'] ?? {};
+    const userConfig = pkg['what-new-pkg'] ?? {};
 
     return {
       ...DEFAULTS,
@@ -35,8 +35,8 @@ export function loadConfig(projectRoot: string): NpmCompareConfig {
 
 /** Merge CLI flags on top of file-based config. CLI flags always win. */
 export function mergeCliFlags(
-  base: NpmCompareConfig,
-  flags: Partial<NpmCompareConfig>,
-): NpmCompareConfig {
+  base: WhatNewPkgConfig,
+  flags: Partial<WhatNewPkgConfig>,
+): WhatNewPkgConfig {
   return { ...base, ...flags };
 }

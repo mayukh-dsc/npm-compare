@@ -1,12 +1,12 @@
 {
-  "name": "npm-compare",
+  "name": "what-new-pkg",
   "version": "0.1.0",
   "description": "Compare npm or pnpm lockfiles against git HEAD and report newly introduced dependencies with introducer attribution.",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "bin": {
-    "npm-compare": "./dist/cli.js"
+    "what-new-pkg": "./dist/cli.js"
   },
   "files": [
     "dist/",
@@ -39,12 +39,12 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/mayukh-dsc/npm-compare.git"
+    "url": "https://github.com/mayukh-dsc/what-new-pkg.git"
   },
   "bugs": {
-    "url": "https://github.com/mayukh-dsc/npm-compare/issues"
+    "url": "https://github.com/mayukh-dsc/what-new-pkg/issues"
   },
-  "homepage": "https://github.com/mayukh-dsc/npm-compare#readme",
+  "homepage": "https://github.com/mayukh-dsc/what-new-pkg#readme",
   "dependencies": {
     "commander": "^12.1.0",
     "yaml": "^2.6.0"

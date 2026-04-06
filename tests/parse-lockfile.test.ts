@@ -26,7 +26,7 @@ describe('parseNpmLockfileToGraph', () => {
   });
 
   it('throws on invalid JSON', () => {
-    const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'npm-compare-plf-'));
+    const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'what-new-pkg-plf-'));
     try {
       const bad = path.join(tmpDir, 'package-lock.json');
       fs.writeFileSync(bad, '{ not json', 'utf8');
@@ -66,7 +66,7 @@ describe('parseNpmLockfileToGraph', () => {
   });
 
   it('parses v1 lockfile with nested dependencies', () => {
-    const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'npm-compare-npmv1-'));
+    const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'what-new-pkg-npmv1-'));
     try {
       const lockPath = path.join(tmpDir, 'package-lock.json');
       fs.writeFileSync(
@@ -112,7 +112,7 @@ describe('parsePnpmLockfileToGraph', () => {
   });
 
   it('throws on invalid YAML', () => {
-    const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'npm-compare-pnpm-bad-'));
+    const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'what-new-pkg-pnpm-bad-'));
     try {
       const p = path.join(tmp, 'pnpm-lock.yaml');
       fs.writeFileSync(p, '[', 'utf8');
@@ -129,7 +129,7 @@ describe('parsePnpmLockfileToGraph', () => {
   });
 
   it('uses unknown project metadata when package.json is missing', () => {
-    const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'npm-compare-pnpm-nopkg-'));
+    const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'what-new-pkg-pnpm-nopkg-'));
     try {
       const p = path.join(tmp, 'pnpm-lock.yaml');
       fs.writeFileSync(p, 'lockfileVersion: "9.0"\nimporters: {}\npackages: {}\n', 'utf8');
@@ -191,7 +191,7 @@ describe('parsePnpmLockfileToGraph', () => {
 
 describe('resolveDefaultLockfile', () => {
   it('prefers pnpm-lock.yaml', () => {
-    const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'npm-compare-rdl-'));
+    const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'what-new-pkg-rdl-'));
     try {
       fs.writeFileSync(path.join(tmp, 'pnpm-lock.yaml'), 'lockfileVersion: "9.0"\n', 'utf8');
       fs.writeFileSync(path.join(tmp, 'package-lock.json'), '{}', 'utf8');
@@ -202,7 +202,7 @@ describe('resolveDefaultLockfile', () => {
   });
 
   it('falls back to package-lock.json', () => {
-    const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'npm-compare-rdl2-'));
+    const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'what-new-pkg-rdl2-'));
     try {
       fs.writeFileSync(path.join(tmp, 'package-lock.json'), '{"lockfileVersion":3}', 'utf8');
       expect(resolveDefaultLockfile(tmp).endsWith('package-lock.json')).toBe(true);
@@ -212,7 +212,7 @@ describe('resolveDefaultLockfile', () => {
   });
 
   it('throws when neither exists', () => {
-    const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'npm-compare-rdl3-'));
+    const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'what-new-pkg-rdl3-'));
     try {
       expect(() => resolveDefaultLockfile(tmp)).toThrow('No lockfile found');
     } finally {
@@ -233,7 +233,7 @@ describe('parseLockfileToGraph', () => {
 describe('parseLockfileContentToGraph', () => {
   it('parses pnpm YAML from memory using relative path basename', () => {
     const yaml = fs.readFileSync(path.join(fixturesDir, 'pnpm-lock.v9.yaml'), 'utf8');
-    const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'npm-compare-plc-'));
+    const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'what-new-pkg-plc-'));
     try {
       const g = parseLockfileContentToGraph(yaml, 'pnpm-lock.yaml', tmp);
       expect(g.kind).toBe('pnpm');
@@ -252,7 +252,7 @@ describe('parseLockfileContentToGraph', () => {
 
   it('treats arbitrary .yaml paths as pnpm', () => {
     const yaml = 'lockfileVersion: "9.0"\nimporters: {}\npackages: {}\n';
-    const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'npm-compare-plc2-'));
+    const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'what-new-pkg-plc2-'));
     try {
       const g = parseLockfileContentToGraph(yaml, path.join('sub', 'foo.yaml'), tmp);
       expect(g.kind).toBe('pnpm');

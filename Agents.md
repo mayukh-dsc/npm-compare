@@ -1,5 +1,5 @@
 # Project Overview
-- **Name**: [npm-compare]
+- **Name**: [what-new-pkg]
 - **Goal**: [open-source minimalistic CLI that diffs the current npm or pnpm lockfile against git HEAD and reports newly introduced packages with introducer attribution in HTML]
 - **Tech Stack**: [TypeScript, Node.js]
 

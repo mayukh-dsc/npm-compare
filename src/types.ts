@@ -20,6 +20,6 @@ export interface DependencyTrees {
   development: DependencyTreeNode[];
 }
 
-export interface NpmCompareConfig {
+export interface WhatNewPkgConfig {
   outputDir: string;
 }

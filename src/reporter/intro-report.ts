@@ -68,7 +68,7 @@ export function generateIntroReportHtml(
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>npm-compare — introduced dependencies</title>
+  <title>what-new-pkg — introduced dependencies</title>
   <style>${commonStyles()}
     .row-added td { background: #f0fff4 !important; }
     .intro-highlight { font-weight: 600; color: var(--success-text); }
@@ -77,7 +77,7 @@ export function generateIntroReportHtml(
 <body>
   <div class="container">
     <header>
-      <div class="brand">npm-compare</div>
+      <div class="brand">what-new-pkg</div>
       <h1>Newly introduced dependencies</h1>
       <div class="meta">
         <span><strong>Project:</strong> ${escapeHtml(projectName)}</span>
@@ -131,7 +131,7 @@ export function generateIntroReportHtml(
     </div>
 
     <footer>
-      Open source — npm-compare
+      Open source — what-new-pkg
     </footer>
   </div>
   <script>

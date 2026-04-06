@@ -20,4 +20,4 @@ export { isGitRepository, getGitLockfile, getGitFileFromHead } from './strategie
 
 export { generateIntroReportHtml } from './reporter/intro-report.js';
 
-export type { PackageEntry, DependencyTreeNode, DependencyTrees, NpmCompareConfig } from './types.js';
+export type { PackageEntry, DependencyTreeNode, DependencyTrees, WhatNewPkgConfig } from './types.js';

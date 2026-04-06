@@ -1,9 +1,9 @@
-# npm-compare
+# what-new-pkg
 
 > A minimalistic, open-source tool that **compares your lockfile to the last committed version in git** and reports **newly introduced dependencies**, with **who depends on whom** in the resolved graph (npm or pnpm).
 
-[CI](https://github.com/mayukh-dsc/npm-compare/actions/workflows/ci.yml)
-[npm version](https://www.npmjs.com/package/npm-compare)
+[CI](https://github.com/mayukh-dsc/what-new-pkg/actions/workflows/ci.yml)
+[npm version](https://www.npmjs.com/package/what-new-pkg)
 [License: MIT](https://opensource.org/licenses/MIT)
 [npm provenance](https://docs.npmjs.com/generating-provenance-statements)
 
@@ -11,22 +11,22 @@
 
 ## Why?
 
-After an install or upgrade, you often need to answer: **which package pulled in this new transitive dependency?** `npm-compare` diffs the **current** lockfile against **`git show HEAD:<lockfile>`** and lists each **new** resolved package with its **immediate dependent** (or workspace root when hoisted).
+After an install or upgrade, you often need to answer: **which package pulled in this new transitive dependency?** `what-new-pkg` diffs the **current** lockfile against **`git show HEAD:<lockfile>`** and lists each **new** resolved package with its **immediate dependent** (or workspace root when hoisted).
 
 ---
 
 ## Install
 
 ```bash
-npm install --save-dev npm-compare
+npm install --save-dev what-new-pkg
 ```
 
-Then add the postinstall hook (or run `npm-compare setup`):
+Then add the postinstall hook (or run `what-new-pkg setup`):
 
 ```json
 {
   "scripts": {
-    "postinstall": "npm-compare generate"
+    "postinstall": "what-new-pkg generate"
   }
 }
 ```
@@ -34,7 +34,7 @@ Then add the postinstall hook (or run `npm-compare setup`):
 Or:
 
 ```bash
-npx npm-compare setup
+npx what-new-pkg setup
 ```
 
 ---
@@ -43,13 +43,13 @@ npx npm-compare setup
 
 ```bash
 # Auto-detect lockfile: pnpm-lock.yaml if present, else package-lock.json
-npm-compare generate
+what-new-pkg generate
 
 # Explicit lockfile path (relative to project root)
-npm-compare generate --lock-file package-lock.json
+what-new-pkg generate --lock-file package-lock.json
 
-# Output directory (default: .npm-compare)
-npm-compare generate --output-dir .npm-compare
+# Output directory (default: .what-new-pkg)
+what-new-pkg generate --output-dir .what-new-pkg
 ```
 
 ### Baseline
@@ -68,18 +68,18 @@ By default, one HTML file is written:
 
 | File                         | Description |
 | ---------------------------- | ----------- |
-| `.npm-compare/npm-compare.html` | New packages vs `HEAD`, with **Introduced by** (parent in the lockfile graph) |
+| `.what-new-pkg/what-new-pkg.html` | New packages vs `HEAD`, with **Introduced by** (parent in the lockfile graph) |
 
 ---
 
 ## Configuration
 
-Optional `"npm-compare"` section in `package.json`:
+Optional `"what-new-pkg"` section in `package.json`:
 
 ```json
 {
-  "npm-compare": {
-    "outputDir": ".npm-compare"
+  "what-new-pkg": {
+    "outputDir": ".what-new-pkg"
   }
 }
 ```
@@ -98,9 +98,9 @@ Optional `"npm-compare"` section in `package.json`:
 
 ## Security
 
-This tool is published with **npm provenance** (`npm publish --provenance`), cryptographically linking every release to its GitHub Actions build. You can verify any published version at `https://www.npmjs.com/package/npm-compare`.
+This tool is published with **npm provenance** (`npm publish --provenance`), cryptographically linking every release to its GitHub Actions build. You can verify any published version at `https://www.npmjs.com/package/what-new-pkg`.
 
-To report a vulnerability in `npm-compare` itself, see [SECURITY.md](./SECURITY.md).
+To report a vulnerability in `what-new-pkg` itself, see [SECURITY.md](./SECURITY.md).
 
 ---
 

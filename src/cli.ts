@@ -10,18 +10,18 @@ import { generateIntroReportHtml } from './reporter/intro-report.js';
 import { logger } from './logger.js';
 import { PACKAGE_VERSION } from './package-version.js';
 import type { LockfileGraph } from './graph/types.js';
-import type { NpmCompareConfig } from './types.js';
+import type { WhatNewPkgConfig } from './types.js';
 
 const program = new Command();
 
 program
-  .name('npm-compare')
+  .name('what-new-pkg')
   .description('Compare lockfiles against git HEAD and report newly introduced dependencies')
   .version(PACKAGE_VERSION);
 
 program
   .command('generate')
-  .description('Scan the lockfile and write npm-compare.html (introduced packages vs git HEAD)')
+  .description('Scan the lockfile and write what-new-pkg.html (introduced packages vs git HEAD)')
   .option('--cwd <path>', 'Project root directory', process.env['INIT_CWD'] ?? process.cwd())
   .option(
     '--lock-file <path>',
@@ -29,13 +29,13 @@ program
   )
   .option(
     '--output-dir <path>',
-    'Output directory for HTML (relative to --cwd; default: .npm-compare)',
+    'Output directory for HTML (relative to --cwd; default: .what-new-pkg)',
   )
   .action((opts: { cwd: string; lockFile?: string; outputDir?: string }) => {
     const projectRoot = path.resolve(opts.cwd);
     const fileConfig = loadConfig(projectRoot);
 
-    const cliOverrides: Partial<NpmCompareConfig> = {};
+    const cliOverrides: Partial<WhatNewPkgConfig> = {};
     if (opts.outputDir !== undefined) cliOverrides.outputDir = opts.outputDir;
     const config = mergeCliFlags(fileConfig, cliOverrides);
     const outputDir = path.resolve(projectRoot, config.outputDir);
@@ -61,7 +61,7 @@ program
     }
 
     console.log('');
-    logger.section('npm-compare');
+    logger.section('what-new-pkg');
     logger.info(`Scanning ${lockFilePath}…`);
 
     let graph: LockfileGraph;
@@ -109,7 +109,7 @@ program
       },
     );
 
-    const outPath = path.join(outputDir, 'npm-compare.html');
+    const outPath = path.join(outputDir, 'what-new-pkg.html');
     fs.writeFileSync(outPath, html, 'utf8');
 
     logger.success(
@@ -120,7 +120,7 @@ program
 
 program
   .command('setup')
-  .description('Add npm-compare postinstall hook to the current project\'s package.json')
+  .description('Add what-new-pkg postinstall hook to the current project\'s package.json')
   .option('--cwd <path>', 'Project root directory', process.cwd())
   .action((opts: { cwd: string }) => {
     const pkgPath = path.resolve(opts.cwd, 'package.json');
@@ -134,20 +134,20 @@ program
     };
     pkg.scripts = pkg.scripts ?? {};
 
-    if (pkg.scripts['postinstall']?.includes('npm-compare')) {
-      logger.info('npm-compare postinstall hook is already configured.');
+    if (pkg.scripts['postinstall']?.includes('what-new-pkg')) {
+      logger.info('what-new-pkg postinstall hook is already configured.');
       return;
     }
 
     if (pkg.scripts['postinstall']) {
-      pkg.scripts['postinstall'] += ' && npm-compare generate';
+      pkg.scripts['postinstall'] += ' && what-new-pkg generate';
     } else {
-      pkg.scripts['postinstall'] = 'npm-compare generate';
+      pkg.scripts['postinstall'] = 'what-new-pkg generate';
     }
 
     fs.writeFileSync(pkgPath, JSON.stringify(pkg, null, 2) + '\n', 'utf8');
     logger.success('Added postinstall hook to package.json');
-    logger.info('npm-compare generate will now run automatically on every install.');
+    logger.info('what-new-pkg generate will now run automatically on every install.');
   });
 
 program.parse();
