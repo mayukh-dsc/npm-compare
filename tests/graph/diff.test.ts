@@ -96,4 +96,42 @@ describe('diffGraphs', () => {
     expect(d.introduced).toHaveLength(1);
     expect(d.introduced[0]?.child.name).toBe('foo');
   });
+
+  it('uses multi introducer when multiple parents exist', () => {
+    const pa = node('a@1', 'a', '1.0.0', null);
+    const pb = node('b@1', 'b', '1.0.0', null);
+    const child = node('c@1', 'c', '1.0.0', 'a@1', {
+      additionalParentIds: ['b@1'],
+    });
+    const prev = graph([pa, pb]);
+    const cur = graph([pa, pb, child]);
+    const d = diffGraphs(prev, cur);
+    expect(d.introduced).toHaveLength(1);
+    expect(d.introduced[0]?.introducerKind).toBe('multi');
+    expect(
+      d.introduced[0]?.introducers
+        ?.map((n) => n.id)
+        .sort((a, b) => a.localeCompare(b)),
+    ).toEqual(['a@1', 'b@1']);
+    expect(d.introduced[0]?.introducers).toBeDefined();
+  });
+
+  it('treats missing parent node as root introducer', () => {
+    const child = node('node_modules/orphan', 'orphan', '1.0.0', 'node_modules/missing');
+    const prev = graph([]);
+    const cur = graph([child]);
+    const d = diffGraphs(prev, cur);
+    expect(d.introduced).toHaveLength(1);
+    expect(d.introduced[0]?.introducerKind).toBe('root');
+  });
+
+  it('deduplicates additional parents that match the primary parent id', () => {
+    const p = node('p@1', 'p', '1.0.0', null);
+    const child = node('c@1', 'c', '1.0.0', 'p@1', { additionalParentIds: ['p@1'] });
+    const prev = graph([p]);
+    const cur = graph([p, child]);
+    const d = diffGraphs(prev, cur);
+    expect(d.introduced).toHaveLength(1);
+    expect(d.introduced[0]?.introducerKind).toBe('parent');
+  });
 });

@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
-import { escapeHtml, truncate, formatDate } from '../../src/reporter/shared.js';
+import { escapeHtml, truncate, formatDate, sortScript, commonStyles } from '../../src/reporter/shared.js';
 
 describe('shared reporter helpers', () => {
   afterEach(() => {
@@ -25,5 +25,11 @@ describe('shared reporter helpers', () => {
     const iso = '2020-01-15T12:00:00.000Z';
     expect(formatDate(iso)).toBe(iso);
     spy.mockRestore();
+  });
+
+  it('sortScript and commonStyles return non-empty strings for HTML injection', () => {
+    expect(sortScript().length).toBeGreaterThan(100);
+    expect(commonStyles().length).toBeGreaterThan(100);
+    expect(sortScript()).toContain('initSort');
   });
 });
