@@ -188,6 +188,76 @@ export function commonStyles(): string {
 
     .section-title { font-size: 14px; font-weight: 600; margin: 20px 0 10px; display: flex; align-items: center; gap: 8px; }
 
+    .report-section {
+      margin-bottom: 28px;
+    }
+    .report-section h2 {
+      font-size: 17px;
+      font-weight: 600;
+      margin-bottom: 10px;
+      padding-bottom: 6px;
+      border-bottom: 1px solid var(--border);
+    }
+    .tree-panel {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 12px 16px;
+      margin-bottom: 12px;
+      max-height: 520px;
+      overflow: auto;
+      box-shadow: var(--shadow);
+    }
+    .tree-panel .tree-empty { margin: 4px 0; font-size: 13px; }
+    ul.dep-tree {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+    }
+    ul.dep-tree.nested {
+      margin-top: 6px;
+      padding-left: 14px;
+      border-left: 1px solid var(--border-light);
+    }
+    .dep-tree-item.hidden { display: none !important; }
+    .dep-node { margin: 2px 0; }
+    .dep-summary {
+      cursor: pointer;
+      list-style: none;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: baseline;
+      gap: 6px 10px;
+      padding: 4px 0;
+    }
+    .dep-summary::-webkit-details-marker { display: none; }
+    .dep-summary::before {
+      content: '▸';
+      display: inline-block;
+      width: 14px;
+      color: var(--muted);
+      transition: transform 0.12s;
+    }
+    details.dep-node[open] > .dep-summary::before { transform: rotate(90deg); }
+    .dep-leaf {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: baseline;
+      gap: 6px 10px;
+      padding: 4px 0 4px 14px;
+    }
+    .tree-int { font-size: 11px; max-width: 180px; overflow: hidden; text-overflow: ellipsis; }
+    .tree-res { font-size: 11px; max-width: 280px; overflow: hidden; text-overflow: ellipsis; }
+    .flat-toggle {
+      margin: 10px 0 8px;
+      font-size: 13px;
+    }
+    .flat-toggle summary {
+      cursor: pointer;
+      color: var(--link);
+      font-weight: 500;
+    }
+
     footer {
       margin-top: 24px;
       text-align: center;
@@ -238,6 +308,29 @@ export function sortScript(): string {
         const q = input.value.toLowerCase();
         table.querySelectorAll('tbody tr').forEach(row => {
           row.classList.toggle('hidden', !row.textContent.toLowerCase().includes(q));
+        });
+      });
+    }
+
+    function initReportSearch(inputId, tableIds, treeRootIds) {
+      const input = document.getElementById(inputId);
+      if (!input) return;
+      input.addEventListener('input', function () {
+        const q = input.value.toLowerCase().trim();
+        (tableIds || []).forEach(function (id) {
+          const table = document.getElementById(id);
+          if (!table) return;
+          table.querySelectorAll('tbody tr').forEach(function (row) {
+            row.classList.toggle('hidden', q !== '' && !row.textContent.toLowerCase().includes(q));
+          });
+        });
+        (treeRootIds || []).forEach(function (id) {
+          const root = document.getElementById(id);
+          if (!root) return;
+          root.querySelectorAll('[data-dep-search]').forEach(function (el) {
+            const hay = (el.getAttribute('data-dep-search') || '').toLowerCase();
+            el.classList.toggle('hidden', q !== '' && !hay.includes(q));
+          });
         });
       });
     }

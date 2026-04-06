@@ -1,6 +1,6 @@
 # npm-compare
 
-> A minimalistic, open-source security tool that audits your installed npm packages and detects supply-chain attacks — like the [axios incident](https://socket.dev/blog/inside-node-modules) — before they reach production.
+> A minimalistic, open-source tool that **compares your lockfile to the last committed version in git** and reports **newly introduced dependencies**, with **who depends on whom** in the resolved graph (npm or pnpm).
 
 [CI](https://github.com/mayukh-dsc/npm-compare/actions/workflows/ci.yml)
 [npm version](https://www.npmjs.com/package/npm-compare)
@@ -11,15 +11,7 @@
 
 ## Why?
 
-Supply-chain attacks on npm packages are growing. The classic signal: **a package is re-published at the same version number but with a different (malicious) payload**. Tools like `npm audit` only catch *known* CVEs. They miss zero-day tampering.
-
-`npm-compare` catches what `npm audit` misses by:
-
-1. **Snapshotting** every installed package's integrity hash after every `npm install`
-2. **Diffing** against your last git commit's snapshot — so you instantly see what changed
-3. **Cross-checking** live integrity hashes against the npm registry — so even a first-time install is audited
-
-The key insight: if `axios@1.6.0`'s `sha512` hash in your lock file differs from what the registry says it should be, **something is very wrong**.
+After an install or upgrade, you often need to answer: **which package pulled in this new transitive dependency?** `npm-compare` diffs the **current** lockfile against **`git show HEAD:<lockfile>`** and lists each **new** resolved package with its **immediate dependent** (or workspace root when hoisted).
 
 ---
 
@@ -34,12 +26,12 @@ Then add the postinstall hook (or run `npm-compare setup`):
 ```json
 {
   "scripts": {
-    "postinstall": "npm-compare generate --compare=git,registry"
+    "postinstall": "npm-compare generate"
   }
 }
 ```
 
-Or use the setup command:
+Or:
 
 ```bash
 npx npm-compare setup
@@ -49,96 +41,58 @@ npx npm-compare setup
 
 ## Usage
 
-### Generate a report
-
 ```bash
-# Scan installed packages and generate the installed HTML report only
+# Auto-detect lockfile: pnpm-lock.yaml if present, else package-lock.json
 npm-compare generate
 
-# Compare against your last git commit (Strategy B)
-npm-compare generate --compare=git
+# Explicit lockfile path (relative to project root)
+npm-compare generate --lock-file package-lock.json
 
-# Audit integrity hashes against the npm registry (Strategy C)
-npm-compare generate --compare=registry
-
-# Both strategies
-npm-compare generate --compare=git,registry
-
-# Exit with code 1 if critical issues are found (useful for CI)
-npm-compare generate --compare=git,registry --fail-on-critical
+# Output directory (default: .npm-compare)
+npm-compare generate --output-dir .npm-compare
 ```
 
-### Output files
+### Baseline
 
-By default, HTML reports are written under `**.npm-compare/**` in your project root (override with `outputDir` or `--output-dir`).
+Comparison uses the **same lockfile path** committed at **git `HEAD`**. Commit your lockfile so the tool has a baseline. If the file is missing from `HEAD` or the project is not a git repository, the report explains that and shows no introduced rows (no crash).
 
+### Monorepos
 
-| File                                           | Description                                                    |
-| ---------------------------------------------- | -------------------------------------------------------------- |
-| `.npm-compare/npm-compare-installed.html`      | All installed packages: name, version, integrity, resolved URL |
-| `.npm-compare/npm-compare-diff-git.html`       | Diff vs last git commit: added, removed, changed packages      |
-| `.npm-compare/npm-compare-audit-registry.html` | Live integrity audit against npm registry                      |
-| `.npm-compare-snapshot.json`                   | Committed snapshot at project root (required for git strategy) |
+Run once per **package root** that owns a lockfile (e.g. workspace root with a single `pnpm-lock.yaml` or `package-lock.json`).
 
+---
 
-> **Important for the git strategy:** commit `.npm-compare-snapshot.json` to your repository. It is updated on every `npm install` and git-tracked, so you always have a diff target.
+## Output
 
-The `snapshotFile` path must be **repository-relative** and safe (no `..` segments or absolute paths). This is enforced when reading the snapshot from git.
+By default, one HTML file is written:
+
+| File                         | Description |
+| ---------------------------- | ----------- |
+| `.npm-compare/npm-compare.html` | New packages vs `HEAD`, with **Introduced by** (parent in the lockfile graph) |
 
 ---
 
 ## Configuration
 
-Add an `"npm-compare"` section to your `package.json`:
+Optional `"npm-compare"` section in `package.json`:
 
 ```json
 {
   "npm-compare": {
-    "compare": ["git", "registry"],
-    "outputDir": ".npm-compare",
-    "registryUrl": "https://registry.npmjs.org",
-    "concurrency": 10,
-    "timeout": 10000,
-    "snapshotFile": ".npm-compare-snapshot.json"
+    "outputDir": ".npm-compare"
   }
 }
 ```
 
-`outputDir` defaults to `.npm-compare`; you can omit it unless you want a different folder.
-
-CLI flags always override `package.json` config.
-
 ---
 
-## What each strategy detects
+## Lock file support
 
-### Strategy: git (`--compare=git`)
-
-Compares the current `package-lock.json` scan against the snapshot saved in your last git commit.
-
-
-| Signal                                          | Severity        |
-| ----------------------------------------------- | --------------- |
-| Integrity hash changed for same package version | 🚨 **Critical** |
-| Package version changed                         | ⚠ Changed       |
-| Package added or removed                        | ℹ Info          |
-| Resolved URL changed                            | ⚠ Changed       |
-
-
-### Strategy: registry (`--compare=registry`)
-
-Cross-checks every package in your lock file against live data from the npm registry.
-
-
-| Signal                                        | Severity        |
-| --------------------------------------------- | --------------- |
-| Lock file integrity ≠ registry integrity      | 🚨 **Critical** |
-| Package not found on public registry          | ⚠ Warning       |
-| Non-standard resolved URL                     | ⚠ Warning       |
-| Package has install scripts (pre/postinstall) | ⚠ Warning       |
-| Registry has no `dist.integrity` (cannot verify lock file hash) | ⚠ Warning |
-| Newer version available                       | ℹ Info          |
-
+| Format                       | Status      |
+| ---------------------------- | ----------- |
+| `package-lock.json` v1/v2/v3 | Supported   |
+| `pnpm-lock.yaml`             | Supported   |
+| `yarn.lock`                  | Not planned in this release |
 
 ---
 
@@ -147,18 +101,6 @@ Cross-checks every package in your lock file against live data from the npm regi
 This tool is published with **npm provenance** (`npm publish --provenance`), cryptographically linking every release to its GitHub Actions build. You can verify any published version at `https://www.npmjs.com/package/npm-compare`.
 
 To report a vulnerability in `npm-compare` itself, see [SECURITY.md](./SECURITY.md).
-
----
-
-## Lock file support
-
-
-| Format                       | Status      |
-| ---------------------------- | ----------- |
-| `package-lock.json` v1/v2/v3 | ✔ Supported |
-| `yarn.lock`                  | Planned     |
-| `pnpm-lock.yaml`             | Planned     |
-
 
 ---
 

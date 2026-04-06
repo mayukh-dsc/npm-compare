@@ -1,30 +1,23 @@
-export {
-  parseLockfile,
-  buildSnapshot,
-  dedupeLockfilePackages,
-} from './scanner.js';
-export type { ParsedLockfile } from './scanner.js';
+export { buildDependencyTrees, getParentLockfilePath } from './dependency-tree.js';
+export type { Lockfile } from './dependency-tree.js';
 
-export { readSnapshot, writeSnapshot } from './snapshot.js';
+export { parseLockfileToGraph, parseLockfileContentToGraph, resolveDefaultLockfile } from './parse-lockfile.js';
 
-export { diffPackages, hasCriticalChanges } from './diff.js';
+export { parseNpmLockfileToGraph, npmLockfileJsonToGraph } from './adapters/npm-lockfile.js';
+export type { NpmLockfileJson } from './adapters/npm-lockfile.js';
+
+export { parsePnpmLockfileToGraph, pnpmPackageId, pnpmLockfileYamlToGraph } from './adapters/pnpm-lockfile.js';
+export type { PnpmLockfileYaml } from './adapters/pnpm-lockfile.js';
+
+export { diffGraphs } from './graph/diff.js';
+export type { GraphDiff } from './graph/diff.js';
+
+export type { LockfileNode, LockfileGraph, IntroducedDependency, IntroducerKind } from './graph/types.js';
 
 export { loadConfig, mergeCliFlags } from './config.js';
 
-export { isGitRepository, getGitSnapshot } from './strategies/git.js';
-export { auditRegistry } from './strategies/registry.js';
+export { isGitRepository, getGitLockfile, getGitFileFromHead } from './strategies/git.js';
 
-export { generateInstalledHtml } from './reporter/installed.js';
-export { generateGitDiffHtml } from './reporter/git-diff.js';
-export { generateRegistryAuditHtml } from './reporter/registry-audit.js';
+export { generateIntroReportHtml } from './reporter/intro-report.js';
 
-export type {
-  PackageEntry,
-  Snapshot,
-  ChangedPackage,
-  PackageDiff,
-  RegistryAuditEntry,
-  RegistryAudit,
-  CompareStrategyName,
-  NpmCompareConfig,
-} from './types.js';
+export type { PackageEntry, DependencyTreeNode, DependencyTrees, NpmCompareConfig } from './types.js';

@@ -48,7 +48,7 @@ describe('cli', () => {
     }
   });
 
-  it('generate writes installed report without strategies', () => {
+  it('generate writes npm-compare.html', () => {
     const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'npm-compare-gen-'));
     try {
       const fixture = path.join(repoRoot, 'tests/fixtures/package-lock.v2.json');
@@ -58,10 +58,10 @@ describe('cli', () => {
         JSON.stringify({ name: 'gen-test', version: '1.0.0' }),
         'utf8',
       );
-      runCli(['generate', '--cwd', tmp, '--concurrency', '2', '--timeout', '5000'], tmp);
-      const html = path.join(tmp, '.npm-compare', 'npm-compare-installed.html');
+      runCli(['generate', '--cwd', tmp], tmp);
+      const html = path.join(tmp, '.npm-compare', 'npm-compare.html');
       expect(fs.existsSync(html)).toBe(true);
-      expect(fs.readFileSync(html, 'utf8')).toContain('Installed Packages');
+      expect(fs.readFileSync(html, 'utf8')).toContain('Newly introduced dependencies');
     } finally {
       fs.rmSync(tmp, { recursive: true, force: true });
     }

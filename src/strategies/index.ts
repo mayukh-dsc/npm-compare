@@ -1,2 +1,1 @@
-export { isGitRepository, getGitSnapshot } from './git.js';
-export { auditRegistry } from './registry.js';
+export { isGitRepository, getGitLockfile, getGitFileFromHead } from './git.js';
