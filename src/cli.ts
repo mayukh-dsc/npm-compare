@@ -2,76 +2,41 @@
 import path from 'node:path';
 import fs from 'node:fs';
 import { Command } from 'commander';
-import { buildSnapshot } from './scanner.js';
-import { writeSnapshot } from './snapshot.js';
-import { diffPackages, hasCriticalChanges } from './diff.js';
+import { parseLockfileToGraph, parseLockfileContentToGraph, resolveDefaultLockfile } from './parse-lockfile.js';
+import { diffGraphs } from './graph/diff.js';
 import { loadConfig, mergeCliFlags } from './config.js';
-import { isGitRepository, getGitSnapshot } from './strategies/git.js';
-import { auditRegistry } from './strategies/registry.js';
-import { generateInstalledHtml } from './reporter/installed.js';
-import { generateGitDiffHtml } from './reporter/git-diff.js';
-import { generateRegistryAuditHtml } from './reporter/registry-audit.js';
+import { isGitRepository, getGitLockfile } from './strategies/git.js';
+import { generateIntroReportHtml } from './reporter/intro-report.js';
 import { logger } from './logger.js';
 import { PACKAGE_VERSION } from './package-version.js';
-import { parsePositiveInt } from './cli-helpers.js';
-import type { CompareStrategyName, NpmCompareConfig } from './types.js';
+import type { LockfileGraph } from './graph/types.js';
+import type { NpmCompareConfig } from './types.js';
 
 const program = new Command();
 
 program
   .name('npm-compare')
-  .description('Audit installed npm packages and detect supply-chain attacks')
+  .description('Compare lockfiles against git HEAD and report newly introduced dependencies')
   .version(PACKAGE_VERSION);
 
 program
   .command('generate')
-  .description('Scan installed packages, generate HTML reports and optionally compare')
+  .description('Scan the lockfile and write npm-compare.html (introduced packages vs git HEAD)')
   .option('--cwd <path>', 'Project root directory', process.env['INIT_CWD'] ?? process.cwd())
-  .option('--lock-file <path>', 'Path to lock file (relative to --cwd)', 'package-lock.json')
   .option(
-    '--compare <strategies>',
-    'Comma-separated compare strategies: git, registry (e.g. --compare=git,registry)',
+    '--lock-file <path>',
+    'Path to lock file relative to --cwd (default: pnpm-lock.yaml or package-lock.json)',
   )
   .option(
     '--output-dir <path>',
-    'Output directory for HTML files (relative to --cwd; default: .npm-compare)',
+    'Output directory for HTML (relative to --cwd; default: .npm-compare)',
   )
-  .option('--concurrency <n>', 'Registry fetch concurrency', '10')
-  .option('--timeout <ms>', 'Registry request timeout in ms', '10000')
-  .option('--fail-on-critical', 'Exit with code 1 if critical issues are found', false)
-  .action(async (opts: {
-    cwd: string;
-    lockFile: string;
-    compare?: string;
-    outputDir?: string;
-    concurrency: string;
-    timeout: string;
-    failOnCritical: boolean;
-  }) => {
+  .action((opts: { cwd: string; lockFile?: string; outputDir?: string }) => {
     const projectRoot = path.resolve(opts.cwd);
     const fileConfig = loadConfig(projectRoot);
 
     const cliOverrides: Partial<NpmCompareConfig> = {};
-    if (opts.compare !== undefined) {
-      cliOverrides.compare = opts.compare
-        .split(',')
-        .map((s) => s.trim())
-        .filter((s): s is CompareStrategyName => s === 'git' || s === 'registry');
-    }
     if (opts.outputDir !== undefined) cliOverrides.outputDir = opts.outputDir;
-    cliOverrides.concurrency = parsePositiveInt(
-      opts.concurrency,
-      fileConfig.concurrency,
-      1,
-      100,
-    );
-    cliOverrides.timeout = parsePositiveInt(
-      opts.timeout,
-      fileConfig.timeout,
-      100,
-      600_000,
-    );
-
     const config = mergeCliFlags(fileConfig, cliOverrides);
     const outputDir = path.resolve(projectRoot, config.outputDir);
 
@@ -79,142 +44,78 @@ program
       fs.mkdirSync(outputDir, { recursive: true });
     }
 
-    const lockFilePath = path.resolve(projectRoot, opts.lockFile);
-
-    console.log('');
-    logger.section('npm-compare');
-    logger.info(`Scanning ${lockFilePath}…`);
-
-    let snapshot;
+    let lockFilePath: string;
     try {
-      snapshot = buildSnapshot(lockFilePath);
+      lockFilePath = opts.lockFile
+        ? path.resolve(projectRoot, opts.lockFile)
+        : resolveDefaultLockfile(projectRoot);
     } catch (err) {
       logger.error(err instanceof Error ? err.message : String(err));
       process.exit(1);
     }
 
-    const installedPath = path.join(outputDir, 'npm-compare-installed.html');
-    fs.writeFileSync(installedPath, generateInstalledHtml(snapshot), 'utf8');
-    logger.success(
-      `Generated: npm-compare-installed.html (${snapshot.packages.length.toLocaleString()} packages)`,
-    );
-
-    let hasCritical = false;
-
-    if (config.compare.includes('git')) {
-      logger.section('Strategy: git');
-
-      if (!isGitRepository(projectRoot)) {
-        logger.warn('Not a git repository — skipping git strategy');
-      } else {
-        const snapshotFilePath = path.resolve(projectRoot, config.snapshotFile);
-        const snapshotFileName = path.relative(projectRoot, snapshotFilePath);
-        const previousSnapshot = getGitSnapshot(snapshotFileName, projectRoot);
-
-        if (!previousSnapshot) {
-          logger.info(
-            `No previous snapshot found in git HEAD (${snapshotFileName}). ` +
-            `Commit the snapshot file after first run to enable comparison.`,
-          );
-        } else {
-          const diff = diffPackages(
-            previousSnapshot.packages,
-            snapshot.packages,
-            previousSnapshot.generatedAt,
-          );
-
-          const gitDiffPath = path.join(outputDir, 'npm-compare-diff-git.html');
-          fs.writeFileSync(
-            gitDiffPath,
-            generateGitDiffHtml(diff, snapshot.projectName),
-            'utf8',
-          );
-
-          const criticals = diff.changed.filter((c) => c.integrityChanged && !c.versionChanged);
-          if (criticals.length > 0) {
-            hasCritical = true;
-            criticals.forEach((c) => {
-              logger.critical(`${c.name}@${c.to.version} — integrity hash changed!`);
-            });
-          }
-
-          logger.success(
-            `Generated: npm-compare-diff-git.html` +
-            ` (+${diff.added.length} -${diff.removed.length} ~${diff.changed.length})`,
-          );
-
-          if (hasCriticalChanges(diff)) {
-            logger.warn('Run: git diff .npm-compare-snapshot.json to review changes');
-          }
-        }
-
-        const snapshotOutPath = path.resolve(projectRoot, config.snapshotFile);
-        writeSnapshot(snapshotOutPath, snapshot);
-        logger.info(`Snapshot updated: ${config.snapshotFile} (commit this file)`);
-      }
-    }
-
-    if (config.compare.includes('registry')) {
-      logger.section('Strategy: registry');
-      logger.info(
-        `Auditing ${snapshot.packages.length.toLocaleString()} packages against ${config.registryUrl}…`,
-      );
-
-      let completed = 0;
-      const total = snapshot.packages.length;
-      const printProgress = (c: number, t: number) => {
-        completed = c;
-        if (process.stdout.isTTY && c % 50 === 0) {
-          process.stdout.write(`\r  Fetching registry data… ${c}/${t}`);
-        }
-      };
-
-      const audit = await auditRegistry(
-        snapshot.packages,
-        config.registryUrl,
-        config.concurrency,
-        config.timeout,
-        printProgress,
-      );
-
-      if (process.stdout.isTTY) process.stdout.write('\r' + ' '.repeat(60) + '\r');
-
-      const registryAuditPath = path.join(outputDir, 'npm-compare-audit-registry.html');
-      fs.writeFileSync(
-        registryAuditPath,
-        generateRegistryAuditHtml(audit, snapshot.projectName, snapshot.dependencyTrees),
-        'utf8',
-      );
-
-      if (audit.criticalCount > 0) {
-        hasCritical = true;
-        audit.entries
-          .filter((e) => !e.integrityMatch && e.registryIntegrity !== null)
-          .forEach((e) => {
-            logger.critical(
-              `${e.name}@${e.version} — lock file integrity differs from registry!`,
-            );
-          });
-      }
-
-      if (audit.warningCount > 0) {
-        logger.warn(
-          `${audit.warningCount} package(s) have warnings (non-standard registry, install scripts, not found, or missing registry integrity)`,
-        );
-      }
-
-      logger.success(
-        `Generated: npm-compare-audit-registry.html` +
-        ` (${audit.criticalCount} critical, ${audit.warningCount} warnings, ${completed}/${total} audited)`,
-      );
-    }
-
-    logger.newline();
-
-    if (hasCritical && opts.failOnCritical) {
-      logger.error('Exiting with code 1 due to critical issues (--fail-on-critical)');
+    const lockFileRelative = path.relative(projectRoot, lockFilePath);
+    if (lockFileRelative.startsWith('..') || path.isAbsolute(lockFileRelative)) {
+      logger.error('Lock file must be inside the project root.');
       process.exit(1);
     }
+
+    console.log('');
+    logger.section('npm-compare');
+    logger.info(`Scanning ${lockFilePath}…`);
+
+    let graph: LockfileGraph;
+    try {
+      graph = parseLockfileToGraph(lockFilePath);
+    } catch (err) {
+      logger.error(err instanceof Error ? err.message : String(err));
+      process.exit(1);
+    }
+
+    let previous: LockfileGraph | null = null;
+    let baselineReason: string | null = null;
+    let hasGitBaseline = false;
+
+    if (isGitRepository(projectRoot)) {
+      const headContent = getGitLockfile(lockFileRelative, projectRoot);
+      if (headContent === null) {
+        baselineReason = `No committed lockfile at HEAD (${lockFileRelative}). Commit the lockfile to enable comparison.`;
+      } else {
+        try {
+          previous = parseLockfileContentToGraph(headContent, lockFileRelative, projectRoot);
+          hasGitBaseline = true;
+        } catch (err) {
+          baselineReason =
+            (err instanceof Error ? err.message : String(err)) +
+            ' — baseline from HEAD could not be parsed.';
+        }
+      }
+    } else {
+      baselineReason = 'Not a git repository — comparison against HEAD was skipped.';
+    }
+
+    const graphDiff = diffGraphs(previous, graph);
+
+    const generatedAt = new Date().toISOString();
+    const html = generateIntroReportHtml(
+      graph.projectName,
+      lockFileRelative,
+      graph,
+      graphDiff,
+      {
+        generatedAt,
+        hasGitBaseline,
+        baselineReason,
+      },
+    );
+
+    const outPath = path.join(outputDir, 'npm-compare.html');
+    fs.writeFileSync(outPath, html, 'utf8');
+
+    logger.success(
+      `Generated: ${path.relative(projectRoot, outPath)} (${graphDiff.introduced.length} introduced, ${graphDiff.removed.length} removed)`,
+    );
+    logger.newline();
   });
 
 program
@@ -246,7 +147,7 @@ program
 
     fs.writeFileSync(pkgPath, JSON.stringify(pkg, null, 2) + '\n', 'utf8');
     logger.success('Added postinstall hook to package.json');
-    logger.info('npm-compare generate will now run automatically on every npm install.');
+    logger.info('npm-compare generate will now run automatically on every install.');
   });
 
 program.parse();

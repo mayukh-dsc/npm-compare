@@ -18,7 +18,7 @@ interface LockfileV2Package {
   link?: boolean;
 }
 
-interface Lockfile {
+export interface Lockfile {
   lockfileVersion: number;
   dependencies?: Record<string, LockfileV1Dependency>;
   packages?: Record<string, LockfileV2Package>;

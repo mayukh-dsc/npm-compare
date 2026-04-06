@@ -5,19 +5,9 @@ vi.mock('node:child_process', () => ({
 }));
 
 import { execFileSync } from 'node:child_process';
-import { isGitRepository, getGitSnapshot } from '../../src/strategies/git.js';
-import type { Snapshot } from '../../src/types.js';
+import { isGitRepository, getGitLockfile } from '../../src/strategies/git.js';
 
 const mockExecFileSync = vi.mocked(execFileSync);
-
-const makeSnapshot = (): Snapshot => ({
-  generatedAt: '2024-01-01T00:00:00.000Z',
-  projectName: 'test',
-  projectVersion: '1.0.0',
-  nodeVersion: 'v20.0.0',
-  lockfileVersion: 2,
-  packages: [],
-});
 
 beforeEach(() => {
   vi.clearAllMocks();
@@ -37,29 +27,28 @@ describe('isGitRepository', () => {
   });
 });
 
-describe('getGitSnapshot', () => {
-  it('returns parsed snapshot when git show succeeds', () => {
-    const snapshot = makeSnapshot();
-    mockExecFileSync.mockReturnValueOnce(JSON.stringify(snapshot));
+describe('getGitLockfile', () => {
+  it('returns raw file text when git show succeeds', () => {
+    const body = '{"lockfileVersion":3,"name":"x"}';
+    mockExecFileSync.mockReturnValueOnce(body);
 
-    const result = getGitSnapshot('.npm-compare-snapshot.json', '/some/path');
-    expect(result).toEqual(snapshot);
+    const result = getGitLockfile('package-lock.json', '/some/path');
+    expect(result).toBe(body);
     expect(mockExecFileSync).toHaveBeenCalledWith(
       'git',
-      ['show', 'HEAD:.npm-compare-snapshot.json'],
+      ['show', 'HEAD:package-lock.json'],
       expect.objectContaining({ cwd: '/some/path' }),
     );
   });
 
-  it('normalizes backslashes to forward slashes for git show (POSIX + Windows-style config)', () => {
-    const snapshot = makeSnapshot();
-    mockExecFileSync.mockReturnValueOnce(JSON.stringify(snapshot));
+  it('normalizes backslashes to forward slashes for git show', () => {
+    mockExecFileSync.mockReturnValueOnce('{}');
 
-    getGitSnapshot('reports\\.npm\\snapshot.json', '/some/path');
+    getGitLockfile('reports\\.npm\\package-lock.json', '/some/path');
 
     expect(mockExecFileSync).toHaveBeenCalledWith(
       'git',
-      ['show', 'HEAD:reports/.npm/snapshot.json'],
+      ['show', 'HEAD:reports/.npm/package-lock.json'],
       expect.objectContaining({ cwd: '/some/path' }),
     );
   });
@@ -68,18 +57,12 @@ describe('getGitSnapshot', () => {
     mockExecFileSync.mockImplementationOnce(() => {
       throw new Error('fatal: Path not found in HEAD');
     });
-    const result = getGitSnapshot('.npm-compare-snapshot.json', '/some/path');
+    const result = getGitLockfile('package-lock.json', '/some/path');
     expect(result).toBeNull();
   });
 
-  it('returns null when git show output is invalid JSON', () => {
-    mockExecFileSync.mockReturnValueOnce('not valid json');
-    const result = getGitSnapshot('.npm-compare-snapshot.json', '/some/path');
-    expect(result).toBeNull();
-  });
-
-  it('returns null for unsafe snapshot paths', () => {
-    expect(getGitSnapshot('../evil.json', '/some/path')).toBeNull();
+  it('returns null for unsafe paths', () => {
+    expect(getGitLockfile('../evil.json', '/some/path')).toBeNull();
     expect(mockExecFileSync).not.toHaveBeenCalled();
   });
 });

@@ -1,0 +1,99 @@
+import { describe, it, expect } from 'vitest';
+import { diffGraphs } from '../../src/graph/diff.js';
+import type { LockfileGraph, LockfileNode } from '../../src/graph/types.js';
+
+function node(
+  id: string,
+  name: string,
+  version: string,
+  parentId: string | null,
+  extra?: Partial<LockfileNode>,
+): LockfileNode {
+  return {
+    id,
+    name,
+    version,
+    integrity: '',
+    resolved: '',
+    dev: false,
+    optional: false,
+    parentId,
+    ...extra,
+  };
+}
+
+function graph(nodes: LockfileNode[], kind: 'npm' | 'pnpm' = 'npm'): LockfileGraph {
+  const m = new Map(nodes.map((n) => [n.id, n]));
+  return {
+    nodes: m,
+    importerIds: [],
+    lockfileVersion: 3,
+    projectName: 't',
+    projectVersion: '1.0.0',
+    kind,
+  };
+}
+
+describe('diffGraphs', () => {
+  it('returns empty when previous is null', () => {
+    const cur = graph([node('node_modules/foo', 'foo', '1.0.0', null)]);
+    const d = diffGraphs(null, cur);
+    expect(d.introduced).toHaveLength(0);
+    expect(d.removed).toHaveLength(0);
+  });
+
+  it('detects introduced nodes by id', () => {
+    const prev = graph([node('node_modules/a', 'a', '1.0.0', null)]);
+    const cur = graph([
+      node('node_modules/a', 'a', '1.0.0', null),
+      node('node_modules/b', 'b', '1.0.0', null),
+    ]);
+    const d = diffGraphs(prev, cur);
+    expect(d.introduced).toHaveLength(1);
+    expect(d.introduced[0]?.child.name).toBe('b');
+    expect(d.introduced[0]?.introducerKind).toBe('root');
+  });
+
+  it('attributes parent introducer', () => {
+    const prev = graph([node('node_modules/p', 'p', '1.0.0', null)]);
+    const cur = graph([
+      node('node_modules/p', 'p', '1.0.0', null),
+      node('node_modules/p/node_modules/c', 'c', '2.0.0', 'node_modules/p'),
+    ]);
+    const d = diffGraphs(prev, cur);
+    expect(d.introduced).toHaveLength(1);
+    expect(d.introduced[0]?.introducerKind).toBe('parent');
+    expect(d.introduced[0]?.introducer?.name).toBe('p');
+  });
+
+  it('detects removed nodes', () => {
+    const prev = graph([
+      node('node_modules/a', 'a', '1.0.0', null),
+      node('node_modules/b', 'b', '1.0.0', null),
+    ]);
+    const cur = graph([node('node_modules/a', 'a', '1.0.0', null)]);
+    const d = diffGraphs(prev, cur);
+    expect(d.removed).toHaveLength(1);
+    expect(d.removed[0]?.name).toBe('b');
+  });
+
+  it('skips importer synthetic nodes in introduced list', () => {
+    const imp: LockfileNode = {
+      id: 'importer:.',
+      name: '(workspace)',
+      version: '',
+      integrity: '',
+      resolved: '',
+      dev: false,
+      optional: false,
+      parentId: null,
+      isImporter: true,
+    };
+    const pkg = node('foo@1.0.0', 'foo', '1.0.0', 'importer:.');
+    const prev = graph([imp], 'pnpm');
+    const cur = graph([imp, pkg], 'pnpm');
+    const d = diffGraphs(prev, cur);
+    expect(d.introduced).toHaveLength(1);
+    expect(d.introduced[0]?.child.name).toBe('foo');
+  });
+});

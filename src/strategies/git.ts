@@ -1,7 +1,5 @@
 import { execFileSync } from 'node:child_process';
 import { isSafeGitShowPath } from '../git-path.js';
-import type { Snapshot } from '../types.js';
-
 /** Git `HEAD:<path>` always uses `/`; normalize `\` so Windows-style paths in config work on POSIX. */
 function toGitPath(snapshotFile: string): string {
   return snapshotFile.replace(/\\/g, '/');
@@ -20,25 +18,30 @@ export function isGitRepository(projectRoot: string): boolean {
 }
 
 /**
- * Reads the snapshot file as it existed in the last git commit (HEAD).
- * Returns null if not a git repo, the file has never been committed, parsing fails, or the path is unsafe.
+ * Reads a repository file as it existed in the last git commit (HEAD).
+ * Returns null if not a git repo, the file has never been committed, or the path is unsafe.
  */
-export function getGitSnapshot(
-  snapshotFile: string,
-  projectRoot: string,
-): Snapshot | null {
-  if (!isSafeGitShowPath(snapshotFile)) {
+export function getGitFileFromHead(relativePath: string, projectRoot: string): string | null {
+  if (!isSafeGitShowPath(relativePath)) {
     return null;
   }
-  const gitPath = toGitPath(snapshotFile);
+  const gitPath = toGitPath(relativePath);
   try {
     const output = execFileSync('git', ['show', `HEAD:${gitPath}`], {
       cwd: projectRoot,
       encoding: 'utf8',
       stdio: ['pipe', 'pipe', 'pipe'],
     });
-    return JSON.parse(output) as Snapshot;
+    return output;
   } catch {
     return null;
   }
+}
+
+/** Raw text of the lockfile at `HEAD` (alias for {@link getGitFileFromHead}). */
+export function getGitLockfile(
+  lockfileRelativePath: string,
+  projectRoot: string,
+): string | null {
+  return getGitFileFromHead(lockfileRelativePath, projectRoot);
 }

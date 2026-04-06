@@ -1,6 +1,6 @@
 # Project Overview
 - **Name**: [npm-compare]
-- **Goal**: [this is an open-source minimalistic npm package to check every node module installed in the project and compare it with the last build version of the project]
+- **Goal**: [open-source minimalistic CLI that diffs the current npm or pnpm lockfile against git HEAD and reports newly introduced packages with introducer attribution in HTML]
 - **Tech Stack**: [TypeScript, Node.js]
 
 # Coding Standards
