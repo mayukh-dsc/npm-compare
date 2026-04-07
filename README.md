@@ -1,6 +1,6 @@
 # what-new-pkg
 
-**See which packages entered your lockfile after an install**—and **who introduced them**—with a terminal summary and an HTML report.
+**See whether any unwanted or suspicious new packages slipped into your project unnoticed** after an install—and **who introduced them**—with a terminal summary and an HTML report.
 
 Open-source CLI for **npm** and **pnpm**: it diffs the **current** lockfile against the same file at **git `HEAD`** and lists each **new** resolved package with its **immediate dependent** (or workspace root when hoisted).
 
