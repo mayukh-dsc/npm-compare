@@ -65,6 +65,18 @@ function defaultCwd(): string {
   return process.env['INIT_CWD'] ?? process.cwd();
 }
 
+/** Warn when the lockfile gained packages vs baseline (removals do not trigger this). */
+function logNewPackagesIntroducedWarning(introducedCount: number): void {
+  if (introducedCount <= 0) return;
+  const mid =
+    introducedCount === 1 ? '1 new package' : `${introducedCount} new packages`;
+  logger.warnHighlight(
+    '',
+    mid,
+    ' introduced (including transitive dependencies). Review what-new-pkg.html.',
+  );
+}
+
 interface GenerateOpts {
   cwd: string;
   'lock-file'?: string;
@@ -172,6 +184,10 @@ function runGenerateAction(values: GenerateOpts): void {
   const outPath = path.join(outputDir, 'what-new-pkg.html');
   fs.writeFileSync(outPath, html, 'utf8');
 
+  if (hasGitBaseline && graphDiff.introduced.length > 0) {
+    logNewPackagesIntroducedWarning(graphDiff.introduced.length);
+  }
+
   logger.success(
     `Generated: ${path.relative(projectRoot, outPath)} (${graphDiff.introduced.length} introduced, ${graphDiff.removed.length} removed)`,
   );
@@ -253,6 +269,9 @@ function runDemoAction(values: DemoOpts): void {
 
   console.log('');
   logger.section('what-new-pkg');
+  if (diff.introduced.length > 0) {
+    logNewPackagesIntroducedWarning(diff.introduced.length);
+  }
   logger.success(
     `Demo report: ${path.relative(projectRoot, outPath)} (${diff.introduced.length} introduced, ${diff.removed.length} removed)`,
   );
