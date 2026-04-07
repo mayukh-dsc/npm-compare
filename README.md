@@ -53,9 +53,10 @@ what-new-pkg generate --output-dir .what-new-pkg
 
 # Sample report (dummy lockfile diff; no git or real lockfile required)
 what-new-pkg demo
+what-new-pkg demo --open
 ```
 
-From the repository root you can also run `npm run demo` (builds then writes `.what-new-pkg/what-new-pkg.html` under the current directory). Open the HTML file in a browser to preview it.
+From the repository root you can also run `npm run demo` (builds then writes `.what-new-pkg/what-new-pkg.html` under the current directory).
 
 ### Baseline
 

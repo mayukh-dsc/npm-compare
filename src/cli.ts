@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 import path from 'node:path';
 import fs from 'node:fs';
+import { spawn } from 'node:child_process';
 import { parseArgs } from 'node:util';
 import { parseLockfileToGraph, parseLockfileContentToGraph, resolveDefaultLockfile } from './parse-lockfile.js';
 import { diffGraphs } from './graph/diff.js';
@@ -57,6 +58,7 @@ Write a sample HTML report with dummy introduced/removed packages (no lockfile o
 Options:
   --cwd <path>        Directory for the output folder (default: INIT_CWD or cwd)
   --output-dir <path> Output directory for HTML (relative to --cwd, default: from config or .what-new-pkg)
+  --open              Open the report in the default browser after writing
   -h, --help          Print help
 `);
 }
@@ -224,6 +226,19 @@ function runGenerate(rawArgs: string[]): void {
 interface DemoOpts {
   cwd: string;
   'output-dir'?: string;
+  open?: boolean;
+}
+
+function openHtmlInBrowser(filePath: string): void {
+  const abs = path.resolve(filePath);
+  const platform = process.platform;
+  if (platform === 'darwin') {
+    spawn('open', [abs], { detached: true, stdio: 'ignore' }).unref();
+  } else if (platform === 'win32') {
+    spawn('cmd', ['/c', 'start', '', abs], { detached: true, stdio: 'ignore' }).unref();
+  } else {
+    spawn('xdg-open', [abs], { detached: true, stdio: 'ignore' }).unref();
+  }
 }
 
 function runDemoAction(values: DemoOpts): void {
@@ -256,6 +271,10 @@ function runDemoAction(values: DemoOpts): void {
   logger.success(
     `Demo report: ${path.relative(projectRoot, outPath)} (${diff.introduced.length} introduced, ${diff.removed.length} removed)`,
   );
+  if (values.open) {
+    openHtmlInBrowser(outPath);
+    logger.info('Opened in default browser.');
+  }
   logger.newline();
 }
 
@@ -263,6 +282,7 @@ function runDemo(rawArgs: string[]): void {
   let values: {
     cwd?: string;
     'output-dir'?: string;
+    open?: boolean;
     help?: boolean;
   };
   try {
@@ -271,6 +291,7 @@ function runDemo(rawArgs: string[]): void {
       options: {
         cwd: { type: 'string', default: defaultCwd() },
         'output-dir': { type: 'string' },
+        open: { type: 'boolean' },
         help: { type: 'boolean', short: 'h' },
       },
       allowPositionals: true,
@@ -296,6 +317,7 @@ function runDemo(rawArgs: string[]): void {
   runDemoAction({
     cwd: values.cwd!,
     'output-dir': values['output-dir'],
+    open: values.open,
   });
 }
 
