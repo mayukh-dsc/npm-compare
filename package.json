@@ -35,7 +35,7 @@
   ],
   "license": "MIT",
   "engines": {
-    "node": ">=18.0.0"
+    "node": ">=18.3.0"
   },
   "repository": {
     "type": "git",
@@ -46,7 +46,6 @@
   },
   "homepage": "https://github.com/mayukh-dsc/what-new-pkg#readme",
   "dependencies": {
-    "commander": "^12.1.0",
     "yaml": "^2.6.0"
   },
   "devDependencies": {

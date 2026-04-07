@@ -23,6 +23,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- **CLI** uses Node’s **`util.parseArgs`** instead of `commander`; **`commander`** removed from dependencies. **`engines.node`** is now **`>=18.3.0`** (`parseArgs` availability).
 - **Project and npm package** renamed from `npm-compare` to **`what-new-pkg`**: CLI binary, default output dir (`.what-new-pkg`), report file (`what-new-pkg.html`), and `package.json` config key (`"what-new-pkg"`). Public config type renamed to **`WhatNewPkgConfig`**.
 - **npm lockfile** parsing now builds a **graph** (`src/adapters/npm-lockfile.ts`); diff is **by lockfile node id**, not by package name alone.
 - Public API exports updated (see `src/index.ts`).
