@@ -53,6 +53,7 @@ Prefer findings that are:
 - grounded in the code
 
 Avoid:
+- Introducing new packages
 - vague comments
 - subjective preferences
 - purely cosmetic nitpicks
