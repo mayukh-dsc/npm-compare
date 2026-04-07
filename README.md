@@ -11,7 +11,9 @@
 
 ## Why?
 
-After an install or upgrade, you often need to answer: **which package pulled in this new transitive dependency?** `what-new-pkg` diffs the **current** lockfile against **`git show HEAD:<lockfile>`** and lists each **new** resolved package with its **immediate dependent** (or workspace root when hoisted).
+- **Transitive supply-chain risk:** A widely reported npm incident showed that compromised code can reach you through **dependencies of dependencies**—not only packages you list in `package.json`.
+- **Production impact:** A transitive supply-chain breach can ship malicious code into **production** builds and runtime—so you need to know **what** newly appeared in the lockfile and **which parent** pulled it in.
+- **`what-new-pkg`** diffs the **current** lockfile against `git show HEAD:<lockfile>` and lists each **new** resolved package with its **immediate dependent** (or workspace root when hoisted).
 
 ---
 
@@ -67,13 +69,21 @@ Run once per **package root** that owns a lockfile (e.g. workspace root with a s
 
 ---
 
-## Output
+## Output:
 
-By default, one HTML file is written:
+In the terminal, the tool highlights when any new package is introduced:
 
-| File                         | Description |
-| ---------------------------- | ----------- |
+![Terminal: new packages highlighted](docs/demo-images/terminal-output.png)
+
+By default, one HTML file is written (`.what-new-pkg/what-new-pkg.html`):
+
+| File                              | Description                                                                                                                                                                      |
+| --------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `.what-new-pkg/what-new-pkg.html` | **Introduced** packages vs `HEAD` (orange highlights) with **Introduced by**, and **Removed** packages (green) with **Previously under** (parent in the baseline lockfile graph) |
+
+Example HTML report:
+
+![HTML report: introduced and removed packages](docs/demo-images/html-report.png)
 
 When `generate` compares against git `HEAD` and finds **new** packages (including transitive additions), the CLI prints a **warning**-styled line with a **bold** count so removals alone stay quiet. Package removals do not trigger that line.
 
@@ -95,11 +105,13 @@ Optional `"what-new-pkg"` section in `package.json`:
 
 ## Lock file support
 
-| Format                       | Status      |
-| ---------------------------- | ----------- |
-| `package-lock.json` v1/v2/v3 | Supported   |
-| `pnpm-lock.yaml`             | Supported   |
+
+| Format                       | Status                      |
+| ---------------------------- | --------------------------- |
+| `package-lock.json` v1/v2/v3 | Supported                   |
+| `pnpm-lock.yaml`             | Supported                   |
 | `yarn.lock`                  | Not planned in this release |
+
 
 ---
 
