@@ -1,6 +1,6 @@
 {
   "name": "what-new-pkg",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Compare npm or pnpm lockfiles against git HEAD and report newly introduced dependencies with introducer attribution.",
   "type": "module",
   "main": "./dist/index.js",
