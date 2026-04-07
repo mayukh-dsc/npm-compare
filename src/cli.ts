@@ -7,6 +7,7 @@ import { diffGraphs } from './graph/diff.js';
 import { loadConfig, mergeCliFlags } from './config.js';
 import { isGitRepository, getGitLockfile } from './strategies/git.js';
 import { generateIntroReportHtml } from './reporter/intro-report.js';
+import { buildDemoReportData } from './demo-report-data.js';
 import { logger } from './logger.js';
 import { PACKAGE_VERSION } from './package-version.js';
 import type { LockfileGraph } from './graph/types.js';
@@ -19,6 +20,7 @@ Compare lockfiles against git HEAD and report newly introduced dependencies.
 
 Commands:
   generate    Scan the lockfile and write what-new-pkg.html (introduced packages vs git HEAD)
+  demo        Write a sample what-new-pkg.html using dummy lockfile data (for UI preview)
   setup       Add what-new-pkg postinstall hook to the current project's package.json
 
 Options:
@@ -44,6 +46,18 @@ function printSetupHelp(): void {
 Options:
   --cwd <path>    Project root directory (default: cwd)
   -h, --help      Print help
+`);
+}
+
+function printDemoHelp(): void {
+  console.log(`Usage: what-new-pkg demo [options]
+
+Write a sample HTML report with dummy introduced/removed packages (no lockfile or git required).
+
+Options:
+  --cwd <path>        Directory for the output folder (default: INIT_CWD or cwd)
+  --output-dir <path> Output directory for HTML (relative to --cwd, default: from config or .what-new-pkg)
+  -h, --help          Print help
 `);
 }
 
@@ -151,6 +165,7 @@ function runGenerateAction(values: GenerateOpts): void {
       generatedAt,
       hasGitBaseline,
       baselineReason,
+      baselineGraph: previous,
     },
   );
 
@@ -202,6 +217,84 @@ function runGenerate(rawArgs: string[]): void {
   runGenerateAction({
     cwd: values.cwd!,
     'lock-file': values['lock-file'],
+    'output-dir': values['output-dir'],
+  });
+}
+
+interface DemoOpts {
+  cwd: string;
+  'output-dir'?: string;
+}
+
+function runDemoAction(values: DemoOpts): void {
+  const projectRoot = path.resolve(values.cwd);
+  const fileConfig = loadConfig(projectRoot);
+
+  const cliOverrides: Partial<WhatNewPkgConfig> = {};
+  if (values['output-dir'] !== undefined) cliOverrides.outputDir = values['output-dir'];
+  const config = mergeCliFlags(fileConfig, cliOverrides);
+  const outputDir = path.resolve(projectRoot, config.outputDir);
+
+  if (!fs.existsSync(outputDir)) {
+    fs.mkdirSync(outputDir, { recursive: true });
+  }
+
+  const { projectName, lockfileLabel, graph, baselineGraph, diff } = buildDemoReportData();
+  const generatedAt = new Date().toISOString();
+  const html = generateIntroReportHtml(projectName, lockfileLabel, graph, diff, {
+    generatedAt,
+    hasGitBaseline: true,
+    baselineReason: null,
+    baselineGraph,
+  });
+
+  const outPath = path.join(outputDir, 'what-new-pkg.html');
+  fs.writeFileSync(outPath, html, 'utf8');
+
+  console.log('');
+  logger.section('what-new-pkg');
+  logger.success(
+    `Demo report: ${path.relative(projectRoot, outPath)} (${diff.introduced.length} introduced, ${diff.removed.length} removed)`,
+  );
+  logger.newline();
+}
+
+function runDemo(rawArgs: string[]): void {
+  let values: {
+    cwd?: string;
+    'output-dir'?: string;
+    help?: boolean;
+  };
+  try {
+    const parsed = parseArgs({
+      args: rawArgs,
+      options: {
+        cwd: { type: 'string', default: defaultCwd() },
+        'output-dir': { type: 'string' },
+        help: { type: 'boolean', short: 'h' },
+      },
+      allowPositionals: true,
+      strict: true,
+    });
+    values = parsed.values;
+    if (parsed.positionals.length > 0) {
+      logger.error(`Unexpected arguments: ${parsed.positionals.join(' ')}`);
+      printDemoHelp();
+      process.exit(1);
+    }
+  } catch (e) {
+    logger.error(e instanceof Error ? e.message : String(e));
+    printDemoHelp();
+    process.exit(1);
+  }
+
+  if (values.help) {
+    printDemoHelp();
+    process.exit(0);
+  }
+
+  runDemoAction({
+    cwd: values.cwd!,
     'output-dir': values['output-dir'],
   });
 }
@@ -284,6 +377,10 @@ function main(): void {
 
   if (cmd === 'generate') {
     runGenerate(rest);
+    return;
+  }
+  if (cmd === 'demo') {
+    runDemo(rest);
     return;
   }
   if (cmd === 'setup') {

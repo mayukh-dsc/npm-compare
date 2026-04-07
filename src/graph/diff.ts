@@ -10,7 +10,8 @@ export interface GraphDiff {
   removed: LockfileNode[];
 }
 
-function collectIntroducers(
+/** Parents of a node in `graph` (for introduced rows in the current graph, or removed rows in the baseline graph). */
+export function collectIntroducers(
   graph: LockfileGraph,
   node: LockfileNode,
 ): { introducer: LockfileNode | null; kind: IntroducerKind; introducers?: LockfileNode[] } {
