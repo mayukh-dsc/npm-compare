@@ -50,7 +50,13 @@ what-new-pkg generate --lock-file package-lock.json
 
 # Output directory (default: .what-new-pkg)
 what-new-pkg generate --output-dir .what-new-pkg
+
+# Sample report (dummy lockfile diff; no git or real lockfile required)
+what-new-pkg demo
+what-new-pkg demo --open
 ```
+
+From the repository root you can also run `npm run demo` (builds then writes `.what-new-pkg/what-new-pkg.html` under the current directory).
 
 ### Baseline
 
@@ -68,7 +74,7 @@ By default, one HTML file is written:
 
 | File                         | Description |
 | ---------------------------- | ----------- |
-| `.what-new-pkg/what-new-pkg.html` | New packages vs `HEAD`, with **Introduced by** (parent in the lockfile graph) |
+| `.what-new-pkg/what-new-pkg.html` | **Introduced** packages vs `HEAD` (orange highlights) with **Introduced by**, and **Removed** packages (green) with **Previously under** (parent in the baseline lockfile graph) |
 
 ---
 

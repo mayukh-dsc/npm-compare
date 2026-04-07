@@ -66,4 +66,19 @@ describe('cli', () => {
       fs.rmSync(tmp, { recursive: true, force: true });
     }
   });
+
+  it('demo writes sample what-new-pkg.html with dummy package names', () => {
+    const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'what-new-pkg-demo-'));
+    try {
+      runCli(['demo', '--cwd', tmp], tmp);
+      const htmlPath = path.join(tmp, '.what-new-pkg', 'what-new-pkg.html');
+      expect(fs.existsSync(htmlPath)).toBe(true);
+      const body = fs.readFileSync(htmlPath, 'utf8');
+      expect(body).toContain('nested-new');
+      expect(body).toContain('legacy-dep');
+      expect(body).toContain('Removed packages');
+    } finally {
+      fs.rmSync(tmp, { recursive: true, force: true });
+    }
+  });
 });

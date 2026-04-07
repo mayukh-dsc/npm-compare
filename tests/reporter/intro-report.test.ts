@@ -148,5 +148,55 @@ describe('generateIntroReportHtml', () => {
     expect(html).toContain('multiple dependents');
     expect(html).toContain('a@1.0.0, b@1.0.0');
     expect(html).toContain('Workspace root');
+    expect(html).toContain('stat-card--introduced');
+    expect(html).toContain('row-introduced');
+  });
+
+  it('renders removed table and orange/green stat cards when baselineGraph is set', () => {
+    const oldN = mkNode({
+      id: 'node_modules/old-pkg',
+      name: 'old-pkg',
+      version: '1.0.0',
+      parentId: null,
+    });
+    const baselineGraph: LockfileGraph = {
+      nodes: new Map([[oldN.id, oldN]]),
+      importerIds: [],
+      lockfileVersion: 3,
+      projectName: 'proj',
+      projectVersion: '1.0.0',
+      kind: 'npm',
+    };
+    const newN = mkNode({
+      id: 'node_modules/new-pkg',
+      name: 'new-pkg',
+      version: '2.0.0',
+      parentId: null,
+    });
+    const graph: LockfileGraph = {
+      nodes: new Map([[newN.id, newN]]),
+      importerIds: [],
+      lockfileVersion: 3,
+      projectName: 'proj',
+      projectVersion: '1.0.0',
+      kind: 'npm',
+    };
+    const diff: GraphDiff = {
+      introduced: [{ child: newN, introducer: null, introducerKind: 'root' }],
+      removed: [oldN],
+    };
+    const html = generateIntroReportHtml('proj', 'package-lock.json', graph, diff, {
+      generatedAt: '2024-06-01T12:00:00.000Z',
+      hasGitBaseline: true,
+      baselineReason: null,
+      baselineGraph,
+    });
+    expect(html).toContain('id="removed-table"');
+    expect(html).toContain('Previously under');
+    expect(html).toContain('old-pkg');
+    expect(html).toContain('row-removed-baseline');
+    expect(html).toContain('stat-card--removed-green');
+    expect(html).toContain('Introduced packages');
+    expect(html).toContain('Removed packages');
   });
 });

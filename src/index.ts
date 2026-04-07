@@ -9,7 +9,7 @@ export type { NpmLockfileJson } from './adapters/npm-lockfile.js';
 export { parsePnpmLockfileToGraph, pnpmPackageId, pnpmLockfileYamlToGraph } from './adapters/pnpm-lockfile.js';
 export type { PnpmLockfileYaml } from './adapters/pnpm-lockfile.js';
 
-export { diffGraphs } from './graph/diff.js';
+export { diffGraphs, collectIntroducers } from './graph/diff.js';
 export type { GraphDiff } from './graph/diff.js';
 
 export type { LockfileNode, LockfileGraph, IntroducedDependency, IntroducerKind } from './graph/types.js';

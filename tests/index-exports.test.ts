@@ -9,6 +9,7 @@ describe('public API (index.ts)', () => {
     expect(api.parseNpmLockfileToGraph).toBeTypeOf('function');
     expect(api.parsePnpmLockfileToGraph).toBeTypeOf('function');
     expect(api.diffGraphs).toBeTypeOf('function');
+    expect(api.collectIntroducers).toBeTypeOf('function');
     expect(api.loadConfig).toBeTypeOf('function');
     expect(api.mergeCliFlags).toBeTypeOf('function');
     expect(api.isGitRepository).toBeTypeOf('function');
