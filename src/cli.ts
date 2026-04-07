@@ -69,11 +69,11 @@ function defaultCwd(): string {
 function logNewPackagesIntroducedWarning(introducedCount: number): void {
   if (introducedCount <= 0) return;
   const mid =
-    introducedCount === 1 ? '1 new package' : `${introducedCount} new packages`;
+    introducedCount === 1 ? '1 new package' : `${introducedCount} new packages `;
   logger.warnHighlight(
     '',
     mid,
-    ' introduced (including transitive dependencies). Review what-new-pkg.html.',
+    '📦 introduced (including transitive dependencies). Review what-new-pkg.html.',
   );
 }
 
