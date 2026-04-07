@@ -50,6 +50,26 @@ describe('parseNpmLockfileToGraph', () => {
     expect(g.kind).toBe('npm');
   });
 
+  it('adds npm logical parent ids for hoisted transitive dependencies', () => {
+    const g = parseNpmLockfileContentToGraph(
+      JSON.stringify({
+        lockfileVersion: 3,
+        packages: {
+          '': { dependencies: { 'what-new-pkg': '^0.1.0' } },
+          'node_modules/what-new-pkg': {
+            version: '0.1.0',
+            dependencies: { commander: '^12.0.0' },
+          },
+          'node_modules/commander': { version: '12.1.0' },
+        },
+      }),
+      'inline-lockfile',
+    );
+    expect(g.nodes.has('npm:lockfile:root')).toBe(true);
+    const cmd = g.nodes.get('node_modules/commander');
+    expect(cmd?.logicalParentIds).toContain('node_modules/what-new-pkg');
+  });
+
   it('parses lockfile v2 packages into a graph', () => {
     const g = parseNpmLockfileToGraph(path.join(fixturesDir, 'package-lock.v2.json'));
     expect(g.kind).toBe('npm');

@@ -15,8 +15,15 @@ export interface LockfileNode {
   parentId: string | null;
   /** pnpm: same logical package can be linked from multiple parents. */
   additionalParentIds?: string[];
+  /**
+   * npm lockfile v2+: packages that declare this dependency (semver-resolved), including
+   * when hoisted so `parentId` is null. May include the synthetic project-root id (`npm:lockfile:root`).
+   */
+  logicalParentIds?: string[];
   /** Synthetic node for pnpm importer (not a real package). */
   isImporter?: boolean;
+  /** Synthetic npm root (`npm:lockfile:root`); excluded from introduced rows. */
+  isNpmLockfileRoot?: boolean;
 }
 
 export interface LockfileGraph {

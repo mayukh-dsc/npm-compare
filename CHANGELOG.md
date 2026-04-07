@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **npm logical introducers** for hoisted packages: `package-lock.json` dependency declarations are matched with `semver` so transitive deps lifted to the root still show **Introduced by** the declaring package (`src/adapters/npm-logical-deps.ts`, `semver` dependency).
 - **`pnpm-lock.yaml` support** via a YAML parser (`yaml` dependency) and `src/adapters/pnpm-lockfile.ts`.
 - **Canonical `LockfileGraph`** (`src/graph/types.ts`) with stable node ids and parent edges for introducer attribution.
 - **Single HTML report** `.what-new-pkg/what-new-pkg.html` listing newly introduced packages and **Introduced by** (parent in the resolved graph, or workspace root when hoisted; multiple parents when deduped).

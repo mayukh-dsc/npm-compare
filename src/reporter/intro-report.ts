@@ -105,7 +105,7 @@ export function generateIntroReportHtml(
     </div>
 
     <p class="text-muted" style="margin-bottom:12px;">
-      Each row links a <span class="intro-highlight">new</span> resolved package to the package that depends on it in the lockfile (or workspace root when hoisted).
+      Each row links a <span class="intro-highlight">new</span> resolved package to an introducer: a nested path in the lockfile, another package that declares it as a dependency (including hoisted npm installs), or the workspace when only your top-level manifest applies.
     </p>
 
     <div class="toolbar">

@@ -1,6 +1,10 @@
 import fs from 'node:fs';
 import { getParentLockfilePath } from '../dependency-tree.js';
 import type { LockfileGraph, LockfileNode } from '../graph/types.js';
+import {
+  createNpmLockfileRootNode,
+  wireNpmLogicalDependencies,
+} from './npm-logical-deps.js';
 
 interface LockfileV1Dependency {
   version: string;
@@ -18,6 +22,10 @@ interface LockfileV2Package {
   dev?: boolean;
   optional?: boolean;
   link?: boolean;
+  dependencies?: Record<string, string>;
+  devDependencies?: Record<string, string>;
+  optionalDependencies?: Record<string, string>;
+  peerDependencies?: Record<string, string>;
 }
 
 export interface NpmLockfileJson {
@@ -92,6 +100,9 @@ export function npmLockfileJsonToGraph(lockfile: NpmLockfileJson): LockfileGraph
 
   if (lockfileVersion >= 2 && lockfile.packages) {
     buildV2Nodes(lockfile.packages, nodes);
+    const npmRoot = createNpmLockfileRootNode();
+    nodes.set(npmRoot.id, npmRoot);
+    wireNpmLogicalDependencies(lockfile.packages, nodes);
   } else if (lockfile.dependencies) {
     buildV1Nodes(lockfile.dependencies, '', nodes);
   }

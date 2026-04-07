@@ -47,10 +47,12 @@
   "homepage": "https://github.com/mayukh-dsc/what-new-pkg#readme",
   "dependencies": {
     "commander": "^12.1.0",
+    "semver": "^7.6.0",
     "yaml": "^2.6.0"
   },
   "devDependencies": {
     "@types/node": "^20.14.0",
+    "@types/semver": "^7.7.1",
     "@typescript-eslint/eslint-plugin": "^7.13.0",
     "@typescript-eslint/parser": "^7.13.0",
     "@vitest/coverage-v8": "^1.6.0",

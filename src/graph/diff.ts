@@ -10,6 +10,12 @@ export interface GraphDiff {
   removed: LockfileNode[];
 }
 
+/** Prefer non–project-root logical introducers when npm hoisting adds synthetic `npm:lockfile:root`. */
+function effectiveIntroducerParents(parents: LockfileNode[]): LockfileNode[] {
+  const real = parents.filter((p) => !p.isNpmLockfileRoot);
+  return real.length > 0 ? real : [];
+}
+
 function collectIntroducers(
   graph: LockfileGraph,
   node: LockfileNode,
@@ -25,19 +31,27 @@ function collectIntroducers(
       if (p && !parents.some((x) => x.id === p.id)) parents.push(p);
     }
   }
+  if (node.logicalParentIds?.length) {
+    for (const pid of node.logicalParentIds) {
+      const p = graph.nodes.get(pid);
+      if (p && !parents.some((x) => x.id === p.id)) parents.push(p);
+    }
+  }
 
-  if (parents.length === 0) {
+  const effective = effectiveIntroducerParents(parents);
+
+  if (effective.length === 0) {
     return { introducer: null, kind: 'root' };
   }
-  if (parents.length === 1) {
-    return { introducer: parents[0]!, kind: 'parent' };
+  if (effective.length === 1) {
+    return { introducer: effective[0]!, kind: 'parent' };
   }
-  return { introducer: parents[0]!, kind: 'multi', introducers: parents };
+  return { introducer: effective[0]!, kind: 'multi', introducers: effective };
 }
 
 /**
  * Nodes present in `current` but not in `previous` (by `id`).
- * Skips synthetic importer nodes when marking introduced — those are structural only.
+ * Skips synthetic importer nodes and the npm lockfile root node when marking introduced / removed.
  * When `previous` is null (no baseline), returns empty introduced/removed lists.
  */
 export function diffGraphs(
@@ -53,6 +67,7 @@ export function diffGraphs(
   const introduced: IntroducedDependency[] = [];
   for (const node of current.nodes.values()) {
     if (node.isImporter) continue;
+    if (node.isNpmLockfileRoot) continue;
     if (prevIds.has(node.id)) continue;
 
     const { introducer, kind, introducers } = collectIntroducers(current, node);
@@ -74,6 +89,7 @@ export function diffGraphs(
     const curIds = new Set(current.nodes.keys());
     for (const node of previous.nodes.values()) {
       if (node.isImporter) continue;
+      if (node.isNpmLockfileRoot) continue;
       if (!curIds.has(node.id)) {
         removed.push(node);
       }

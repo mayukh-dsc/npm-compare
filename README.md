@@ -11,7 +11,7 @@
 
 ## Why?
 
-After an install or upgrade, you often need to answer: **which package pulled in this new transitive dependency?** `what-new-pkg` diffs the **current** lockfile against **`git show HEAD:<lockfile>`** and lists each **new** resolved package with its **immediate dependent** (or workspace root when hoisted).
+After an install or upgrade, you often need to answer: **which package pulled in this new transitive dependency?** `what-new-pkg` diffs the **current** lockfile against **`git show HEAD:<lockfile>`** and lists each **new** resolved package with an **introducer**: a nested path in the lockfile, another package that declares it (for **npm**, including when that dependency is **hoisted** to the root `node_modules`), or the workspace when only your top-level `package.json` applies.
 
 ---
 
@@ -68,7 +68,7 @@ By default, one HTML file is written:
 
 | File                         | Description |
 | ---------------------------- | ----------- |
-| `.what-new-pkg/what-new-pkg.html` | New packages vs `HEAD`, with **Introduced by** (parent in the lockfile graph) |
+| `.what-new-pkg/what-new-pkg.html` | New packages vs `HEAD`, with **Introduced by** (lockfile path parent, logical npm dependent, or workspace) |
 
 ---
 

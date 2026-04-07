@@ -54,6 +54,19 @@ describe('diffGraphs', () => {
     expect(d.introduced[0]?.introducerKind).toBe('root');
   });
 
+  it('attributes logical npm introducer when hoisted (semver edge)', () => {
+    const parent = node('node_modules/what-new-pkg', 'what-new-pkg', '0.1.0', null);
+    const child = node('node_modules/commander', 'commander', '12.1.0', null, {
+      logicalParentIds: ['node_modules/what-new-pkg'],
+    });
+    const prev = graph([parent]);
+    const cur = graph([parent, child]);
+    const d = diffGraphs(prev, cur);
+    expect(d.introduced).toHaveLength(1);
+    expect(d.introduced[0]?.introducerKind).toBe('parent');
+    expect(d.introduced[0]?.introducer?.name).toBe('what-new-pkg');
+  });
+
   it('attributes parent introducer', () => {
     const prev = graph([node('node_modules/p', 'p', '1.0.0', null)]);
     const cur = graph([
