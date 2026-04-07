@@ -31,6 +31,16 @@ describe('logger', () => {
     expect(warnSpy).toHaveBeenCalled();
   });
 
+  it('logs warnHighlight to console.warn with before, bold segment, and after', () => {
+    logger.warnHighlight('See ', '3 new packages', ' in the report.');
+    expect(warnSpy).toHaveBeenCalledTimes(1);
+    const line = warnSpy.mock.calls[0]![0] as string;
+    expect(line).toContain('⚠');
+    expect(line).toContain('See ');
+    expect(line).toContain('3 new packages');
+    expect(line).toContain(' in the report.');
+  });
+
   it('logs error to console.error', () => {
     logger.error('oops');
     expect(errSpy).toHaveBeenCalled();

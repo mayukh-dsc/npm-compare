@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeAll } from 'vitest';
-import { execFileSync } from 'node:child_process';
+import { execFileSync, spawnSync } from 'node:child_process';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
@@ -14,11 +14,12 @@ beforeAll(() => {
 const cliJs = path.join(repoRoot, 'dist/cli.js');
 
 function runCli(args: string[], cwd: string): string {
-  return execFileSync(process.execPath, [cliJs, ...args], {
+  const r = spawnSync(process.execPath, [cliJs, ...args], {
     cwd,
     encoding: 'utf8',
     env: { ...process.env, FORCE_COLOR: '0' },
   });
+  return `${r.stdout ?? ''}${r.stderr ?? ''}`;
 }
 
 describe('cli', () => {
@@ -70,13 +71,16 @@ describe('cli', () => {
   it('demo writes sample what-new-pkg.html with dummy package names', () => {
     const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'what-new-pkg-demo-'));
     try {
-      runCli(['demo', '--cwd', tmp], tmp);
+      const out = runCli(['demo', '--cwd', tmp], tmp);
       const htmlPath = path.join(tmp, '.what-new-pkg', 'what-new-pkg.html');
       expect(fs.existsSync(htmlPath)).toBe(true);
       const body = fs.readFileSync(htmlPath, 'utf8');
       expect(body).toContain('nested-new');
       expect(body).toContain('legacy-dep');
       expect(body).toContain('Removed packages');
+      expect(out).toContain('new packages');
+      expect(out).toContain('transitive dependencies');
+      expect(out).toContain('Review what-new-pkg.html');
     } finally {
       fs.rmSync(tmp, { recursive: true, force: true });
     }

@@ -75,6 +75,8 @@ By default, one HTML file is written:
 | ---------------------------- | ----------- |
 | `.what-new-pkg/what-new-pkg.html` | **Introduced** packages vs `HEAD` (orange highlights) with **Introduced by**, and **Removed** packages (green) with **Previously under** (parent in the baseline lockfile graph) |
 
+When `generate` compares against git `HEAD` and finds **new** packages (including transitive additions), the CLI prints a **warning**-styled line with a **bold** count so removals alone stay quiet. Package removals do not trigger that line.
+
 ---
 
 ## Configuration
