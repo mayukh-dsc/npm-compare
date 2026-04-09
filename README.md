@@ -76,7 +76,7 @@ From the repo root, `npm run demo` builds and writes `.what-new-pkg/what-new-pkg
 
 ### How comparison works
 
-- The baseline is the **committed** lockfile at **`HEAD`** for the **same path**. Commit your lockfile so diffs mean something. If it is missing from `HEAD` or the project is not a git repo, the report explains that and shows no “introduced” rows (no crash).
+- The baseline is the **committed** lockfile at **`HEAD`** for the **same path**. Commit your lockfile so diffs mean something. If it is missing from `HEAD` or the project is not a git repo, the report explains that and shows no “introduced” rows (no crash). **Large lockfiles** (multi‑MB monorepos) are supported when reading that baseline from git.
 - **Monorepos:** run once per **package root** that owns a lockfile (e.g. workspace root with one `pnpm-lock.yaml` or `package-lock.json`).
 
 ---
