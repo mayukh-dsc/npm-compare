@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.2] — 2026-04-09
+
 ### Fixed
 
 - **`git show` baseline for large lockfiles:** `execFileSync` used Node’s default **1 MiB** stdout buffer, so multi‑megabyte lockfiles failed with **`ENOBUFS`**, the baseline was dropped, and diffs incorrectly showed **0 introduced / 0 removed**. The git read now uses a **64 MiB** buffer.
