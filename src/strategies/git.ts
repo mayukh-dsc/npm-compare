@@ -1,5 +1,12 @@
 import { execFileSync } from 'node:child_process';
 import { isSafeGitShowPath } from '../git-path.js';
+
+/**
+ * Node's default `execFileSync` stdout limit is 1 MiB; monorepo lockfiles are often much larger.
+ * Without this, `git show` fails with `ENOBUFS` and the baseline is treated as missing.
+ */
+export const GIT_SHOW_MAX_BUFFER_BYTES = 64 * 1024 * 1024;
+
 /** Git `HEAD:<path>` always uses `/`; normalize `\` so Windows-style paths in config work on POSIX. */
 function toGitPath(snapshotFile: string): string {
   return snapshotFile.replace(/\\/g, '/');
@@ -30,6 +37,7 @@ export function getGitFileFromHead(relativePath: string, projectRoot: string): s
     const output = execFileSync('git', ['show', `HEAD:${gitPath}`], {
       cwd: projectRoot,
       encoding: 'utf8',
+      maxBuffer: GIT_SHOW_MAX_BUFFER_BYTES,
       stdio: ['pipe', 'pipe', 'pipe'],
     });
     return output;

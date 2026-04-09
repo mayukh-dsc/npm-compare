@@ -5,7 +5,11 @@ vi.mock('node:child_process', () => ({
 }));
 
 import { execFileSync } from 'node:child_process';
-import { isGitRepository, getGitLockfile } from '../../src/strategies/git.js';
+import {
+  isGitRepository,
+  getGitLockfile,
+  GIT_SHOW_MAX_BUFFER_BYTES,
+} from '../../src/strategies/git.js';
 
 const mockExecFileSync = vi.mocked(execFileSync);
 
@@ -37,7 +41,7 @@ describe('getGitLockfile', () => {
     expect(mockExecFileSync).toHaveBeenCalledWith(
       'git',
       ['show', 'HEAD:package-lock.json'],
-      expect.objectContaining({ cwd: '/some/path' }),
+      expect.objectContaining({ cwd: '/some/path', maxBuffer: GIT_SHOW_MAX_BUFFER_BYTES }),
     );
   });
 
@@ -49,7 +53,7 @@ describe('getGitLockfile', () => {
     expect(mockExecFileSync).toHaveBeenCalledWith(
       'git',
       ['show', 'HEAD:reports/.npm/package-lock.json'],
-      expect.objectContaining({ cwd: '/some/path' }),
+      expect.objectContaining({ cwd: '/some/path', maxBuffer: GIT_SHOW_MAX_BUFFER_BYTES }),
     );
   });
 
