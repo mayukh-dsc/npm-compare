@@ -22,7 +22,7 @@ function node(
   };
 }
 
-function graph(nodes: LockfileNode[], kind: 'npm' | 'pnpm' = 'npm'): LockfileGraph {
+function graph(nodes: LockfileNode[], kind: 'npm' | 'pnpm' | 'yarn' = 'npm'): LockfileGraph {
   const m = new Map(nodes.map((n) => [n.id, n]));
   return {
     nodes: m,

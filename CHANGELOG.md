@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **Yarn Classic (`yarn.lock`)** parsing via optional peer dependency **`@yarnpkg/lockfile`** (`peerDependencies` + `peerDependenciesMeta.optional`). Auto-detect order is **`pnpm-lock.yaml` → `yarn.lock` → `package-lock.json`**. Yarn Berry lockfiles are rejected with a clear error.
+
 ### Changed
 
 - **Release workflow:** verify `package.json` version matches the pushed tag before `npm publish`; verify npm auth with `npm whoami`; align Node with **22.x** and set **`FORCE_JAVASCRIPT_ACTIONS_TO_NODE24`** for Actions. Maintainer steps documented in **RELEASING.md**.

@@ -12,6 +12,10 @@ import {
   parsePnpmLockfileContentToGraph,
   pnpmLockfileYamlToGraph,
 } from '../src/adapters/pnpm-lockfile.js';
+import {
+  parseYarnLockfileToGraph,
+  yarnDescriptorName,
+} from '../src/adapters/yarn-lockfile.js';
 import fs from 'node:fs';
 import os from 'node:os';
 
@@ -195,7 +199,19 @@ describe('resolveDefaultLockfile', () => {
     try {
       fs.writeFileSync(path.join(tmp, 'pnpm-lock.yaml'), 'lockfileVersion: "9.0"\n', 'utf8');
       fs.writeFileSync(path.join(tmp, 'package-lock.json'), '{}', 'utf8');
+      fs.writeFileSync(path.join(tmp, 'yarn.lock'), '# yarn lockfile v1\n', 'utf8');
       expect(resolveDefaultLockfile(tmp).endsWith('pnpm-lock.yaml')).toBe(true);
+    } finally {
+      fs.rmSync(tmp, { recursive: true, force: true });
+    }
+  });
+
+  it('prefers yarn.lock over package-lock.json', () => {
+    const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'what-new-pkg-rdl-yarn-'));
+    try {
+      fs.writeFileSync(path.join(tmp, 'yarn.lock'), '# yarn lockfile v1\n', 'utf8');
+      fs.writeFileSync(path.join(tmp, 'package-lock.json'), '{"lockfileVersion":3}', 'utf8');
+      expect(resolveDefaultLockfile(tmp).endsWith('yarn.lock')).toBe(true);
     } finally {
       fs.rmSync(tmp, { recursive: true, force: true });
     }
@@ -221,12 +237,52 @@ describe('resolveDefaultLockfile', () => {
   });
 });
 
+describe('parseYarnLockfileToGraph', () => {
+  it('parses Yarn Classic lockfile and marks devDependencies', () => {
+    const g = parseYarnLockfileToGraph(path.join(fixturesDir, 'yarn-classic', 'yarn.lock'));
+    expect(g.kind).toBe('yarn');
+    expect(g.lockfileVersion).toBe(1);
+    expect(g.nodes.get('ms@2.1.2')?.dev).toBe(false);
+    expect(g.nodes.get('left-pad@1.3.0')?.dev).toBe(true);
+  });
+
+  it('throws when lockfile path does not exist', () => {
+    expect(() => parseYarnLockfileToGraph('/nonexistent/yarn.lock')).toThrow('Lock file not found');
+  });
+
+  it('rejects Yarn Berry lockfiles', () => {
+    const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'what-new-pkg-yarn-berry-'));
+    try {
+      const p = path.join(tmp, 'yarn.lock');
+      fs.writeFileSync(
+        p,
+        `__metadata:
+  version: 6
+`,
+        'utf8',
+      );
+      expect(() => parseYarnLockfileToGraph(p)).toThrow(/Yarn Berry/);
+    } finally {
+      fs.rmSync(tmp, { recursive: true, force: true });
+    }
+  });
+});
+
+describe('yarnDescriptorName', () => {
+  it('strips range from scoped and unscoped keys', () => {
+    expect(yarnDescriptorName('lodash@^4.0.0')).toBe('lodash');
+    expect(yarnDescriptorName('@types/node@^18.0.0')).toBe('@types/node');
+  });
+});
+
 describe('parseLockfileToGraph', () => {
   it('dispatches by extension', () => {
     const g = parseLockfileToGraph(path.join(fixturesDir, 'pnpm-lock.v9.yaml'));
     expect(g.kind).toBe('pnpm');
     const h = parseLockfileToGraph(path.join(fixturesDir, 'package-lock.v2.json'));
     expect(h.kind).toBe('npm');
+    const y = parseLockfileToGraph(path.join(fixturesDir, 'yarn-classic', 'yarn.lock'));
+    expect(y.kind).toBe('yarn');
   });
 });
 
@@ -259,5 +315,13 @@ describe('parseLockfileContentToGraph', () => {
     } finally {
       fs.rmSync(tmp, { recursive: true, force: true });
     }
+  });
+
+  it('parses yarn.lock from memory', () => {
+    const body = fs.readFileSync(path.join(fixturesDir, 'yarn-classic', 'yarn.lock'), 'utf8');
+    const pkgDir = path.join(fixturesDir, 'yarn-classic');
+    const g = parseLockfileContentToGraph(body, 'yarn.lock', pkgDir);
+    expect(g.kind).toBe('yarn');
+    expect(g.nodes.has('ms@2.1.2')).toBe(true);
   });
 });
