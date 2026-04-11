@@ -15,6 +15,11 @@ export function collectIntroducers(
   graph: LockfileGraph,
   node: LockfileNode,
 ): { introducer: LockfileNode | null; kind: IntroducerKind; introducers?: LockfileNode[] } {
+  /** Direct workspace dependencies (and Yarn wiring that clears the primary parent) use `null`. */
+  if (node.parentId === null) {
+    return { introducer: null, kind: 'root' };
+  }
+
   const parents: LockfileNode[] = [];
   if (node.parentId) {
     const p = graph.nodes.get(node.parentId);

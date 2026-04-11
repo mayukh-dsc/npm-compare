@@ -1,7 +1,7 @@
 {
   "name": "what-new-pkg",
   "version": "0.2.2",
-  "description": "Compare npm or pnpm lockfiles against git HEAD and report newly introduced dependencies with introducer attribution.",
+  "description": "Compare npm, pnpm, or Yarn Classic lockfiles against git HEAD and report newly introduced dependencies with introducer attribution.",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -40,7 +40,8 @@
     "lockfile",
     "packages",
     "integrity",
-    "compare"
+    "compare",
+    "yarn"
   ],
   "license": "MIT",
   "engines": {
@@ -57,7 +58,16 @@
   "dependencies": {
     "yaml": "^2.6.0"
   },
+  "peerDependencies": {
+    "@yarnpkg/lockfile": "^1.1.0"
+  },
+  "peerDependenciesMeta": {
+    "@yarnpkg/lockfile": {
+      "optional": true
+    }
+  },
   "devDependencies": {
+    "@yarnpkg/lockfile": "^1.1.0",
     "@types/node": "^20.14.0",
     "@typescript-eslint/eslint-plugin": "^7.13.0",
     "@typescript-eslint/parser": "^7.13.0",

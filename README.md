@@ -2,7 +2,7 @@
 
 **See whether any unwanted or suspicious new packages slipped into your project unnoticed** after an install—and **who introduced them**—with a terminal summary and an HTML report.
 
-Open-source CLI for **npm** and **pnpm**: it diffs the **current** lockfile against the same file at **git `HEAD`** and lists each **new** resolved package with its **immediate dependent** (or workspace root when hoisted).
+Open-source CLI for **npm**, **pnpm**, and **Yarn Classic** (`yarn.lock`): it diffs the **current** lockfile against the same file at **git `HEAD`** and lists each **new** resolved package with its **immediate dependent** (or workspace root when hoisted).
 
 [![npm version](https://img.shields.io/npm/v/what-new-pkg)](https://www.npmjs.com/package/what-new-pkg)
 [![CI](https://img.shields.io/github/actions/workflow/status/mayukh-dsc/what-new-pkg/ci.yml?label=CI)](https://github.com/mayukh-dsc/what-new-pkg/actions/workflows/ci.yml)
@@ -39,6 +39,14 @@ Releases are published with [npm provenance](https://docs.npmjs.com/generating-p
 npm install --save-dev what-new-pkg
 ```
 
+**Yarn Classic** (`yarn.lock`): install the optional peer so the parser is available (npm 7+ often installs optional peers automatically; otherwise add it explicitly):
+
+```bash
+npm install --save-dev @yarnpkg/lockfile
+```
+
+**Yarn Berry** (v2+) lockfiles are not supported.
+
 Optional: add a **postinstall** hook (or run `npx what-new-pkg setup`):
 
 ```json
@@ -53,7 +61,7 @@ Optional: add a **postinstall** hook (or run `npx what-new-pkg setup`):
 
 ## Usage
 
-**Typical** (auto-detects `pnpm-lock.yaml` if present, else `package-lock.json`):
+**Typical** (auto-detects `pnpm-lock.yaml`, else `yarn.lock`, else `package-lock.json`):
 
 ```bash
 what-new-pkg generate
@@ -83,7 +91,7 @@ npm run generate -- --lock-file test-packages/package-lock.json
 ### How comparison works
 
 - The baseline is the **committed** lockfile at **`HEAD`** for the **same path**. Commit your lockfile so diffs mean something. If it is missing from `HEAD` or the project is not a git repo, the report explains that and shows no “introduced” rows (no crash). **Large lockfiles** (multi‑MB monorepos) are supported when reading that baseline from git.
-- **Monorepos:** run once per **package root** that owns a lockfile (e.g. workspace root with one `pnpm-lock.yaml` or `package-lock.json`).
+- **Monorepos:** run once per **package root** that owns a lockfile (e.g. workspace root with one `pnpm-lock.yaml`, `yarn.lock`, or `package-lock.json`).
 
 ---
 
@@ -103,11 +111,12 @@ Optional `"what-new-pkg"` section in `package.json`:
 
 ## Lock file support
 
-| Format                       | Status                      |
-| ---------------------------- | --------------------------- |
-| `package-lock.json` v1/v2/v3 | Supported                   |
-| `pnpm-lock.yaml`             | Supported                   |
-| `yarn.lock`                  | Not planned in this release |
+| Format                       | Status                                                                 |
+| ---------------------------- | ---------------------------------------------------------------------- |
+| `package-lock.json` v1/v2/v3 | Supported                                                              |
+| `pnpm-lock.yaml`             | Supported                                                              |
+| `yarn.lock` (Yarn Classic v1) | Supported — requires optional peer **`@yarnpkg/lockfile`** (see Install) |
+| `yarn.lock` (Yarn Berry v2+) | Not supported                                                          |
 
 ---
 

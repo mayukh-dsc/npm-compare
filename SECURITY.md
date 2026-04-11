@@ -38,7 +38,7 @@ We follow [Coordinated Vulnerability Disclosure (CVD)](https://cheatsheetseries.
 Given that this is a security tool, we hold ourselves to a high standard:
 
 - All releases are published with **npm provenance** — cryptographically linking the published package to the specific GitHub Actions run that built it
-- Dependencies are kept to an absolute minimum (currently only `yaml` for `pnpm-lock.yaml` parsing)
+- Dependencies are kept small: **`yaml`** for `pnpm-lock.yaml`, and optional peer **`@yarnpkg/lockfile`** for Yarn Classic `yarn.lock` (install it when you need Yarn support)
 - All code is TypeScript with strict mode enabled
 - CodeQL security scanning runs on every PR via GitHub Actions
 - We run `npm audit` on ourselves in CI

@@ -8,6 +8,8 @@ describe('public API (index.ts)', () => {
     expect(api.resolveDefaultLockfile).toBeTypeOf('function');
     expect(api.parseNpmLockfileToGraph).toBeTypeOf('function');
     expect(api.parsePnpmLockfileToGraph).toBeTypeOf('function');
+    expect(api.parseYarnLockfileToGraph).toBeTypeOf('function');
+    expect(api.buildDescriptorEntryIndex).toBeTypeOf('function');
     expect(api.diffGraphs).toBeTypeOf('function');
     expect(api.collectIntroducers).toBeTypeOf('function');
     expect(api.loadConfig).toBeTypeOf('function');

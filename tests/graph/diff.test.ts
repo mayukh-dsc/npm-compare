@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { diffGraphs } from '../../src/graph/diff.js';
+import { diffGraphs, collectIntroducers } from '../../src/graph/diff.js';
 import type { LockfileGraph, LockfileNode } from '../../src/graph/types.js';
 
 function node(
@@ -22,7 +22,7 @@ function node(
   };
 }
 
-function graph(nodes: LockfileNode[], kind: 'npm' | 'pnpm' = 'npm'): LockfileGraph {
+function graph(nodes: LockfileNode[], kind: 'npm' | 'pnpm' | 'yarn' = 'npm'): LockfileGraph {
   const m = new Map(nodes.map((n) => [n.id, n]));
   return {
     nodes: m,
@@ -133,5 +133,16 @@ describe('diffGraphs', () => {
     const d = diffGraphs(prev, cur);
     expect(d.introduced).toHaveLength(1);
     expect(d.introduced[0]?.introducerKind).toBe('parent');
+  });
+});
+
+describe('collectIntroducers', () => {
+  it('treats primary parent null as root even with additional parents (e.g. Yarn direct + transitive)', () => {
+    const pa = node('a@1', 'a', '1.0.0', null);
+    const child = node('c@1', 'c', '1.0.0', null, { additionalParentIds: ['a@1'] });
+    const g = graph([pa, child]);
+    const row = collectIntroducers(g, child);
+    expect(row.kind).toBe('root');
+    expect(row.introducer).toBeNull();
   });
 });

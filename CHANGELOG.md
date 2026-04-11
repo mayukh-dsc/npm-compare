@@ -10,6 +10,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - **`npm run generate`** script (with `pregenerate` build) so maintainers can run the `generate` CLI via npm without `npx`.
+- **Yarn Classic (`yarn.lock`)** parsing via optional peer dependency **`@yarnpkg/lockfile`** (`peerDependencies` + `peerDependenciesMeta.optional`). Auto-detect order is **`pnpm-lock.yaml` → `yarn.lock` → `package-lock.json`**. Yarn Berry lockfiles are rejected with a clear error.
+
+### Fixed
+
+- **Introducer attribution:** `collectIntroducers` now treats **`parentId === null`** as the workspace root even when **`additionalParentIds`** is set (Yarn direct dependency also linked transitively).
+- **Yarn adapter:** descriptor lookup index for lockfile entries; wiring uses **`undefined`** until parent is set (no `''` sentinel); dev-flag relaxation iteration bound scales with graph size.
 
 ### Changed
 

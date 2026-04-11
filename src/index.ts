@@ -9,6 +9,16 @@ export type { NpmLockfileJson } from './adapters/npm-lockfile.js';
 export { parsePnpmLockfileToGraph, pnpmPackageId, pnpmLockfileYamlToGraph } from './adapters/pnpm-lockfile.js';
 export type { PnpmLockfileYaml } from './adapters/pnpm-lockfile.js';
 
+export {
+  parseYarnLockfileToGraph,
+  parseYarnLockfileContentToGraph,
+  yarnLockObjectToGraph,
+  yarnDescriptorName,
+  yarnPackageId,
+  buildDescriptorEntryIndex,
+} from './adapters/yarn-lockfile.js';
+export type { YarnLockEntry, YarnLockfileParseResult } from './adapters/yarn-lockfile.js';
+
 export { diffGraphs, collectIntroducers } from './graph/diff.js';
 export type { GraphDiff } from './graph/diff.js';
 
