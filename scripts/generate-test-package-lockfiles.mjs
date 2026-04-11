@@ -5,20 +5,14 @@
 
 import fs from 'node:fs';
 import path from 'node:path';
-import { fileURLToPath } from 'node:url';
 
-const ROOT = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
-const OUT_DIR = path.join(ROOT, 'test-packages');
+import { TEST_PACKAGES_DIR, integrityFor } from './test-packages-shared.mjs';
+
+const OUT_DIR = TEST_PACKAGES_DIR;
 const MIN_LINES = 5000;
 
 /** Enough mock packages that each emitted file exceeds MIN_LINES. */
 const PACKAGE_COUNT = 1020;
-
-function integrityFor(i) {
-  const b64 = Buffer.from(`mock-integrity-${i}`, 'utf8').toString('base64');
-  const pad = (b64 + 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789').slice(0, 88);
-  return `sha512-${pad}`;
-}
 
 function buildPnpmLockfile() {
   const lines = [];
