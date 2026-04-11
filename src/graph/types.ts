@@ -1,6 +1,6 @@
-/** Single resolved package instance in a lockfile graph (npm path or pnpm package id). */
+/** Single resolved package instance in a lockfile graph (npm path, pnpm id, or Yarn `name@version`). */
 export interface LockfileNode {
-  /** Stable id: npm `packages` key (e.g. node_modules/foo); pnpm `pkg@version` from `packages`. */
+  /** Stable id: npm `packages` key (e.g. node_modules/foo); pnpm / Yarn Classic `pkg@version`. */
   id: string;
   name: string;
   version: string;
@@ -21,13 +21,13 @@ export interface LockfileNode {
 
 export interface LockfileGraph {
   nodes: Map<string, LockfileNode>;
-  /** pnpm importer root ids (e.g. importer:.); empty for npm. */
+  /** pnpm importer root ids (e.g. importer:.); empty for npm and Yarn. */
   importerIds: string[];
   lockfileVersion: number | string;
   projectName: string;
   projectVersion: string;
   /** Which parser produced this graph. */
-  kind: 'npm' | 'pnpm';
+  kind: 'npm' | 'pnpm' | 'yarn';
 }
 
 export type IntroducerKind = 'parent' | 'root' | 'multi';
