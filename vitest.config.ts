@@ -10,6 +10,7 @@ export default defineConfig({
       exclude: [
         'dist/**',
         'tests/**',
+        'scripts/**',
         'vitest.config.ts',
         // Exercised via `dist/cli.js` in tests/cli.test.ts (subprocess — not instrumented)
         'src/cli.ts',

@@ -21,8 +21,15 @@
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
     "demo": "npm run build && node dist/cli.js demo",
+    "pregenerate": "npm run build",
+    "generate": "node dist/cli.js generate",
     "lint": "eslint src",
     "typecheck": "tsc --noEmit",
+    "generate-package-locks": "node scripts/generate-test-package-lockfiles.mjs",
+    "mutate:test-packages:pnpm": "node scripts/mutate-test-package-lockfiles.mjs pnpm",
+    "mutate:test-packages:npm": "node scripts/mutate-test-package-lockfiles.mjs npm",
+    "mutate:test-packages:yarn": "node scripts/mutate-test-package-lockfiles.mjs yarn",
+    "mutate:test-packages": "node scripts/mutate-test-package-lockfiles.mjs all",
     "prepublishOnly": "npm run typecheck && npm run test && npm run build"
   },
   "keywords": [

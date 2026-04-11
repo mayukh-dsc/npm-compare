@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **`npm run generate`** script (with `pregenerate` build) so maintainers can run the `generate` CLI via npm without `npx`.
 - **Yarn Classic (`yarn.lock`)** parsing via optional peer dependency **`@yarnpkg/lockfile`** (`peerDependencies` + `peerDependenciesMeta.optional`). Auto-detect order is **`pnpm-lock.yaml` → `yarn.lock` → `package-lock.json`**. Yarn Berry lockfiles are rejected with a clear error.
 
 ### Fixed

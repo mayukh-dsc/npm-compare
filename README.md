@@ -80,7 +80,13 @@ what-new-pkg generate --output-dir .what-new-pkg
 what-new-pkg demo
 ```
 
-From the repo root, `npm run demo` builds and writes `.what-new-pkg/what-new-pkg.html` for a quick browser preview.
+From this repository’s root, **`npm run generate`** builds and runs `what-new-pkg generate` (same as `npx what-new-pkg generate` after a build). Pass CLI flags after `--`, for example:
+
+```bash
+npm run generate -- --lock-file test-packages/package-lock.json
+```
+
+**`npm run demo`** builds and writes `.what-new-pkg/what-new-pkg.html` using bundled sample data for a quick browser preview.
 
 ### How comparison works
 
@@ -125,6 +131,23 @@ To report a vulnerability in `what-new-pkg` itself, see [SECURITY.md](./SECURITY
 ## Contributing
 
 Contributions are welcome! See [CONTRIBUTING.md](./CONTRIBUTING.md).
+
+The `test-packages/` directory holds **generated** large mock lockfiles (`pnpm-lock.yaml`, `package-lock.json`, `yarn.lock`) for stress testing or local experiments.
+
+**Regenerate from scratch** (each file is rebuilt; must stay above 5000 lines):
+
+```bash
+npm run generate:test-packages
+```
+
+**Simulate a small dependency change** (removes the lowest-index `mock-dep-*`, adds two new `mock-dep-*` after the current max—run per format or all):
+
+```bash
+npm run mutate:test-packages:pnpm
+npm run mutate:test-packages:npm
+npm run mutate:test-packages:yarn
+npm run mutate:test-packages
+```
 
 ---
 
