@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- **Release workflow:** verify `package.json` version matches the pushed tag before `npm publish`; verify npm auth with `npm whoami`; align Node with **22.x** and set **`FORCE_JAVASCRIPT_ACTIONS_TO_NODE24`** for Actions. Maintainer steps documented in **RELEASING.md**.
+
 ## [0.2.2] — 2026-04-09
 
 ### Fixed
