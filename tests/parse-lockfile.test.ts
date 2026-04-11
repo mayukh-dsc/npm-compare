@@ -15,6 +15,7 @@ import {
 import {
   parseYarnLockfileToGraph,
   yarnDescriptorName,
+  buildDescriptorEntryIndex,
 } from '../src/adapters/yarn-lockfile.js';
 import fs from 'node:fs';
 import os from 'node:os';
@@ -272,6 +273,21 @@ describe('yarnDescriptorName', () => {
   it('strips range from scoped and unscoped keys', () => {
     expect(yarnDescriptorName('lodash@^4.0.0')).toBe('lodash');
     expect(yarnDescriptorName('@types/node@^18.0.0')).toBe('@types/node');
+  });
+
+  it('uses the first comma-separated descriptor when present', () => {
+    expect(yarnDescriptorName('lodash@^4.0.0, lodash@~4.17.0')).toBe('lodash');
+  });
+});
+
+describe('buildDescriptorEntryIndex', () => {
+  it('maps each comma-separated descriptor to the same entry', () => {
+    const entry = { version: '4.17.21' };
+    const idx = buildDescriptorEntryIndex({
+      'lodash@^4.0.0, lodash@~4.17.0': entry,
+    });
+    expect(idx.get('lodash@^4.0.0')).toBe(entry);
+    expect(idx.get('lodash@~4.17.0')).toBe(entry);
   });
 });
 

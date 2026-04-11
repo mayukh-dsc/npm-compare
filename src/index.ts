@@ -15,6 +15,7 @@ export {
   yarnLockObjectToGraph,
   yarnDescriptorName,
   yarnPackageId,
+  buildDescriptorEntryIndex,
 } from './adapters/yarn-lockfile.js';
 export type { YarnLockEntry, YarnLockfileParseResult } from './adapters/yarn-lockfile.js';
 

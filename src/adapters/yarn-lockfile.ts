@@ -3,6 +3,11 @@ import path from 'node:path';
 import { createRequire } from 'node:module';
 import type { LockfileGraph, LockfileNode } from '../graph/types.js';
 
+/** During Yarn graph wiring, `undefined` means parent not set yet; then `string | null`. */
+type YarnWiringNode = Omit<LockfileNode, 'parentId'> & {
+  parentId: string | null | undefined;
+};
+
 const require = createRequire(import.meta.url);
 
 export interface YarnLockfileParseResult {
@@ -75,13 +80,46 @@ function readPackageJsonMeta(projectDir: string): {
   }
 }
 
-/** Name part of a Yarn descriptor key (`pkg@^1.0.0`, `@scope/pkg@^1.0.0`). */
+/**
+ * Name part of a Yarn descriptor key (`pkg@^1.0.0`, `@scope/pkg@^1.0.0`).
+ * Uses the first comma-separated segment when present (defensive for combined keys).
+ */
 export function yarnDescriptorName(lockfileKey: string): string {
-  const lastAt = lockfileKey.lastIndexOf('@');
+  const first = lockfileKey.split(',')[0]?.trim() ?? lockfileKey;
+  const lastAt = first.lastIndexOf('@');
   if (lastAt <= 0) {
-    return lockfileKey;
+    return first;
   }
-  return lockfileKey.slice(0, lastAt);
+  return first.slice(0, lastAt);
+}
+
+/**
+ * Map each descriptor string to its lockfile entry so lookups work for comma-joined keys
+ * and match dependency lines that reference a single descriptor.
+ */
+export function buildDescriptorEntryIndex(
+  object: Record<string, YarnLockEntry>,
+): Map<string, YarnLockEntry> {
+  const index = new Map<string, YarnLockEntry>();
+  for (const [key, entry] of Object.entries(object)) {
+    index.set(key, entry);
+    if (key.includes(',')) {
+      for (const part of key.split(',')) {
+        const d = part.trim();
+        if (d) {
+          index.set(d, entry);
+        }
+      }
+    }
+  }
+  return index;
+}
+
+function getLockfileEntry(
+  index: Map<string, YarnLockEntry>,
+  descriptorKey: string,
+): YarnLockEntry | undefined {
+  return index.get(descriptorKey) ?? index.get(descriptorKey.trim());
 }
 
 export function yarnPackageId(name: string, version: string): string {
@@ -94,15 +132,18 @@ function lockfileKeyForDep(depName: string, depRange: string): string {
 
 /** Propagate dev flags along lockfile edges until stable (handles arbitrary key order). */
 function relaxDevFlagsAlongEdges(
-  nodes: Map<string, LockfileNode>,
+  nodes: Map<string, YarnWiringNode>,
   object: Record<string, YarnLockEntry>,
+  entryIndex: Map<string, YarnLockEntry>,
 ): void {
+  const entries = Object.entries(object);
+  const maxIterations = Math.max(nodes.size, entries.length, 1);
   let changed = true;
-  let guard = 0;
-  while (changed && guard < 128) {
-    guard++;
+  let iteration = 0;
+  while (changed && iteration < maxIterations) {
+    iteration++;
     changed = false;
-    for (const [key, entry] of Object.entries(object)) {
+    for (const [key, entry] of entries) {
       const parentId = yarnPackageId(yarnDescriptorName(key), entry.version);
       const parent = nodes.get(parentId);
       if (!parent) continue;
@@ -111,7 +152,7 @@ function relaxDevFlagsAlongEdges(
         if (!deps) return;
         for (const [depName, depRange] of Object.entries(deps)) {
           const childKey = lockfileKeyForDep(depName, depRange);
-          const childEntry = object[childKey];
+          const childEntry = getLockfileEntry(entryIndex, childKey);
           if (!childEntry) continue;
           const childId = yarnPackageId(depName, childEntry.version);
           const child = nodes.get(childId);
@@ -127,7 +168,7 @@ function relaxDevFlagsAlongEdges(
   }
 }
 
-function mergeDevFlag(node: LockfileNode, parentDev: boolean): void {
+function mergeDevFlag(node: { dev: boolean }, parentDev: boolean): void {
   if (!parentDev) {
     node.dev = false;
   } else if (node.dev !== false) {
@@ -135,7 +176,7 @@ function mergeDevFlag(node: LockfileNode, parentDev: boolean): void {
   }
 }
 
-function mergeOptionalFlag(node: LockfileNode, depOptional: boolean): void {
+function mergeOptionalFlag(node: { optional: boolean }, depOptional: boolean): void {
   if (!depOptional) {
     node.optional = false;
   } else if (node.optional !== false) {
@@ -143,12 +184,8 @@ function mergeOptionalFlag(node: LockfileNode, depOptional: boolean): void {
   }
 }
 
-function isParentUnset(child: LockfileNode): boolean {
-  return (child.parentId as unknown) === '';
-}
-
 function setParent(
-  nodes: Map<string, LockfileNode>,
+  nodes: Map<string, YarnWiringNode>,
   childId: string,
   parentId: string,
   depOptional: boolean,
@@ -163,7 +200,7 @@ function setParent(
     }
     return;
   }
-  if (isParentUnset(child)) {
+  if (child.parentId === undefined) {
     child.parentId = parentId;
     return;
   }
@@ -175,7 +212,7 @@ function setParent(
 }
 
 function wireDirectRoot(
-  nodes: Map<string, LockfileNode>,
+  nodes: Map<string, YarnWiringNode>,
   childId: string,
   isDevSection: boolean,
   depOptional: boolean,
@@ -184,7 +221,7 @@ function wireDirectRoot(
   if (!child) return;
   child.dev = isDevSection;
   mergeOptionalFlag(child, depOptional);
-  const prev = isParentUnset(child) ? null : child.parentId;
+  const prev = child.parentId === undefined ? null : child.parentId;
   child.parentId = null;
   if (prev) {
     child.additionalParentIds ??= [];
@@ -213,7 +250,8 @@ export function yarnLockObjectToGraph(
   pkg: ReturnType<typeof readPackageJsonMeta>,
   lockfileVersion: number,
 ): LockfileGraph {
-  const nodes = new Map<string, LockfileNode>();
+  const entryIndex = buildDescriptorEntryIndex(object);
+  const nodes = new Map<string, YarnWiringNode>();
 
   for (const [key, entry] of Object.entries(object)) {
     const name = yarnDescriptorName(key);
@@ -227,8 +265,7 @@ export function yarnLockObjectToGraph(
         resolved: entry.resolved ?? '',
         dev: false,
         optional: false,
-        /** Empty string means "not wired yet"; normalized to null before returning. */
-        parentId: '' as unknown as null,
+        parentId: undefined,
       });
     }
   }
@@ -240,7 +277,7 @@ export function yarnLockObjectToGraph(
   ): void => {
     for (const [name, range] of Object.entries(section)) {
       const k = lockfileKeyForDep(name, range);
-      const entry = object[k];
+      const entry = getLockfileEntry(entryIndex, k);
       if (!entry) {
         continue;
       }
@@ -264,7 +301,7 @@ export function yarnLockObjectToGraph(
       if (!deps) return;
       for (const [depName, depRange] of Object.entries(deps)) {
         const childKey = lockfileKeyForDep(depName, depRange);
-        const childEntry = object[childKey];
+        const childEntry = getLockfileEntry(entryIndex, childKey);
         if (!childEntry) {
           continue;
         }
@@ -277,16 +314,18 @@ export function yarnLockObjectToGraph(
     wireDeps(entry.optionalDependencies, true);
   }
 
-  relaxDevFlagsAlongEdges(nodes, object);
+  relaxDevFlagsAlongEdges(nodes, object, entryIndex);
 
-  for (const node of nodes.values()) {
-    if (isParentUnset(node)) {
-      node.parentId = null;
-    }
+  const outNodes = new Map<string, LockfileNode>();
+  for (const [id, n] of nodes) {
+    outNodes.set(id, {
+      ...n,
+      parentId: n.parentId ?? null,
+    });
   }
 
   return {
-    nodes,
+    nodes: outNodes,
     importerIds: [],
     lockfileVersion,
     projectName,
