@@ -117,6 +117,12 @@ To report a vulnerability in `what-new-pkg` itself, see [SECURITY.md](./SECURITY
 
 Contributions are welcome! See [CONTRIBUTING.md](./CONTRIBUTING.md).
 
+The `test-packages/` directory holds **generated** large mock lockfiles (`pnpm-lock.yaml`, `package-lock.json`, `yarn.lock`) for stress testing or local experiments. Regenerate them with:
+
+```bash
+node scripts/generate-test-package-lockfiles.mjs
+```
+
 ---
 
 ## Releasing
