@@ -119,6 +119,12 @@ Contributions are welcome! See [CONTRIBUTING.md](./CONTRIBUTING.md).
 
 ---
 
+## Releasing
+
+Maintainers: automated npm and GitHub Releases from git tags — see [RELEASING.md](./RELEASING.md).
+
+---
+
 ## License
 
 [MIT](./LICENSE)
