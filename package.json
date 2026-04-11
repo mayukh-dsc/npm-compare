@@ -21,6 +21,8 @@
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
     "demo": "npm run build && node dist/cli.js demo",
+    "pregenerate": "npm run build",
+    "generate": "node dist/cli.js generate",
     "lint": "eslint src",
     "typecheck": "tsc --noEmit",
     "generate-package-locks": "node scripts/generate-test-package-lockfiles.mjs",

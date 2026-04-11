@@ -72,7 +72,13 @@ what-new-pkg generate --output-dir .what-new-pkg
 what-new-pkg demo
 ```
 
-From the repo root, `npm run demo` builds and writes `.what-new-pkg/what-new-pkg.html` for a quick browser preview.
+From this repository’s root, **`npm run generate`** builds and runs `what-new-pkg generate` (same as `npx what-new-pkg generate` after a build). Pass CLI flags after `--`, for example:
+
+```bash
+npm run generate -- --lock-file test-packages/package-lock.json
+```
+
+**`npm run demo`** builds and writes `.what-new-pkg/what-new-pkg.html` using bundled sample data for a quick browser preview.
 
 ### How comparison works
 
